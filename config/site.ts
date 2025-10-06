@@ -29,10 +29,10 @@ export const siteConfig = {
     //   label: "PRO SHOP",
     //   href: "/shop",
     // },
-    {
-      label: "CAMPAIGN",
-      href: "/campaign",
-    },
+    // {
+    //   label: "CAMPAIGN",
+    //   href: "/campaign",
+    // },
     {
       label: "FAQs",
       href: "/#faqs",
