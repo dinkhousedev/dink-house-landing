@@ -140,8 +140,8 @@ export default function IndexPage() {
                     featuring 10 championship courts in the heart of Central
                     Texas. Experience year-round play with 5 climate-controlled
                     indoor courts and 5 outdoor courts. Proudly serving Belton,
-                    Killeen, Copperas Cove, Fort Hood, Temple, and the surrounding
-                    communities.
+                    Killeen, Copperas Cove, Fort Hood, Temple, and the
+                    surrounding communities.
                   </m.div>
 
                   {/* Call-to-Action Buttons */}
@@ -159,7 +159,7 @@ export default function IndexPage() {
                   >
                     <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
                       <Button
-                        className="h-10 sm:h-12 bg-dink-lime px-6 sm:px-8 text-sm sm:text-base font-bold uppercase text-black transition-colors hover:bg-dink-lime-dark"
+                        className="h-10 w-full bg-dink-lime px-[15px] text-sm font-bold uppercase text-black transition-colors hover:bg-dink-lime-dark sm:h-12 sm:w-auto sm:px-8 sm:text-base"
                         radius="full"
                         size="lg"
                         onPress={handleOpenModal}
@@ -228,10 +228,11 @@ export default function IndexPage() {
             <span className="text-dink-lime">Progress?</span>
           </h2>
           <p className="text-gray-300 text-lg mb-6 max-w-2xl mx-auto">
-            Get notified of construction milestones, opening dates, and exclusive pre-launch membership offers
+            Get notified of construction milestones, opening dates, and
+            exclusive pre-launch membership offers
           </p>
           <Button
-            className="h-12 bg-dink-lime px-8 text-base font-bold uppercase text-black transition-colors hover:bg-dink-lime-dark"
+            className="h-12 w-full bg-dink-lime px-[15px] text-base font-bold uppercase text-black transition-colors hover:bg-dink-lime-dark sm:w-auto"
             radius="full"
             size="lg"
             onPress={handleOpenModal}

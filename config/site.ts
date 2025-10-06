@@ -30,6 +30,10 @@ export const siteConfig = {
     //   href: "/shop",
     // },
     {
+      label: "CAMPAIGN",
+      href: "/campaign",
+    },
+    {
       label: "FAQs",
       href: "/#faqs",
     },
@@ -66,6 +70,10 @@ export const siteConfig = {
     // {
     //   label: "Pro Shop",
     //   href: "/shop",
+    {
+      label: "Build the Courts",
+      href: "/campaign",
+    },
     {
       label: "Contact Us",
       href: "/contact",

@@ -49,7 +49,8 @@ const WaitlistModal: React.FC<WaitlistModalProps> = ({ isOpen, onClose }) => {
     }
 
     if (!acceptNotifications) {
-      newErrors.consent = "Please confirm that you want to receive notifications";
+      newErrors.consent =
+        "Please confirm that you want to receive notifications";
     }
 
     setErrors(newErrors);
@@ -98,8 +99,13 @@ const WaitlistModal: React.FC<WaitlistModalProps> = ({ isOpen, onClose }) => {
         setErrors({ submit: data.error || "Something went wrong" });
       }
     } catch (error) {
+      const message =
+        error instanceof Error && error.message
+          ? error.message
+          : "Network error. Please try again.";
+
       setSubmitStatus("error");
-      setErrors({ submit: "Network error. Please try again." });
+      setErrors({ submit: message });
     } finally {
       setIsSubmitting(false);
     }
@@ -124,29 +130,35 @@ const WaitlistModal: React.FC<WaitlistModalProps> = ({ isOpen, onClose }) => {
   };
 
   return (
-    <Modal isOpen={isOpen} placement="center" size="md" onClose={onClose}>
-      <ModalContent>
+    <Modal
+      isOpen={isOpen}
+      placement="center"
+      scrollBehavior="inside"
+      size="md"
+      onClose={onClose}
+    >
+      <ModalContent className="w-full py-6">
         {(onClose) => (
           <>
-            <ModalHeader className="flex flex-col gap-1">
+            <ModalHeader className="flex flex-col gap-3 px-[15px] text-center sm:text-center">
               Join Our Notification List
             </ModalHeader>
             <form onSubmit={handleSubmit}>
-              <ModalBody>
-                <p className="text-sm text-gray-600 mb-4">
+              <ModalBody className="space-y-4 px-[15px]">
+                <p className="text-sm text-gray-600">
                   Join our email list to be notified of our opening date and
                   exclusive updates!
                 </p>
 
                 {submitStatus === "success" && (
-                  <div className="mb-4 p-3 bg-green-100 text-green-700 rounded-lg">
+                  <div className="p-3 bg-green-100 text-green-700 rounded-lg">
                     Thank you for joining our notification list! We&apos;ll be
                     in touch soon.
                   </div>
                 )}
 
                 {submitStatus === "duplicate" && (
-                  <div className="mb-4 p-3 bg-blue-100 text-blue-700 rounded-lg">
+                  <div className="p-3 bg-blue-100 text-blue-700 rounded-lg">
                     <div className="font-semibold mb-1">
                       You&apos;re already subscribed! 🎉
                     </div>
@@ -159,7 +171,7 @@ const WaitlistModal: React.FC<WaitlistModalProps> = ({ isOpen, onClose }) => {
                 )}
 
                 {errors.submit && (
-                  <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg">
+                  <div className="p-3 bg-red-100 text-red-700 rounded-lg">
                     {errors.submit}
                   </div>
                 )}
@@ -204,23 +216,25 @@ const WaitlistModal: React.FC<WaitlistModalProps> = ({ isOpen, onClose }) => {
                     />
 
                     {/* Notification Consent Checkbox */}
-                    <div className="flex items-start gap-3 pt-2">
+                    <div className="flex flex-col gap-2 pt-2 sm:flex-row sm:items-start sm:gap-3">
                       <input
                         required
                         checked={acceptNotifications}
-                        className="mt-1 w-5 h-5 border-2 border-gray-300 rounded focus:ring-2 focus:ring-[#B3FF00] accent-[#B3FF00] cursor-pointer"
+                        className="w-5 h-5 border-2 border-gray-300 rounded focus:ring-2 focus:ring-[#B3FF00] accent-[#B3FF00] cursor-pointer sm:mt-1"
                         disabled={isSubmitting}
                         id="accept-notifications-modal"
                         type="checkbox"
-                        onChange={(e) => setAcceptNotifications(e.target.checked)}
+                        onChange={(e) =>
+                          setAcceptNotifications(e.target.checked)
+                        }
                       />
                       <label
-                        className="text-sm text-gray-700 cursor-pointer select-none"
+                        className="text-sm text-gray-700 cursor-pointer select-none leading-relaxed"
                         htmlFor="accept-notifications-modal"
                       >
-                        I agree to receive email notifications about court bookings,
-                        events, tips, and special offers from The Dink House.{" "}
-                        <span className="text-red-500">*</span>
+                        I agree to receive email notifications about court
+                        bookings, events, tips, and special offers from The Dink
+                        House. <span className="text-red-500">*</span>
                       </label>
                     </div>
 
@@ -232,8 +246,9 @@ const WaitlistModal: React.FC<WaitlistModalProps> = ({ isOpen, onClose }) => {
                   </div>
                 )}
               </ModalBody>
-              <ModalFooter>
+              <ModalFooter className="flex flex-col-reverse gap-2 px-[15px] sm:flex-row sm:justify-end">
                 <Button
+                  className="w-full sm:w-auto"
                   color="danger"
                   isDisabled={isSubmitting}
                   variant="light"
@@ -242,7 +257,7 @@ const WaitlistModal: React.FC<WaitlistModalProps> = ({ isOpen, onClose }) => {
                   Cancel
                 </Button>
                 <Button
-                  className="bg-dink-lime text-black font-bold"
+                  className="bg-dink-lime text-black font-bold w-full sm:w-auto"
                   isDisabled={
                     submitStatus === "success" ||
                     submitStatus === "duplicate" ||
