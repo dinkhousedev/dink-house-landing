@@ -368,7 +368,7 @@ export default function CampaignPage() {
                               <button
                                 key={tier.id}
                                 onClick={() => !isFull && handleSelectTier(tier, campaign)}
-                                disabled={isFull}
+                                disabled={!!isFull}
                                 className={`w-full text-left p-3 rounded-lg border-2 transition-all ${
                                   isFull
                                     ? "border-gray-700 bg-gray-800/30 opacity-50 cursor-not-allowed"
