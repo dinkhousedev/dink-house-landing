@@ -5,10 +5,10 @@ export const siteConfig = {
   description:
     "Premier Pickleball Facility - Indoor & Outdoor Courts, Pro Shop, Lessons, Tournaments, and Social Events. Where Champions Play and Community Thrives.",
   navItems: [
-    {
-      label: "CAMPAIGN",
-      href: "/campaign",
-    },
+    // {
+    //   label: "CAMPAIGN",
+    //   href: "/campaign",
+    // },
     {
       label: "FAQs",
       href: "/#faqs",
