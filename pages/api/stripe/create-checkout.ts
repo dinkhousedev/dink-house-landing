@@ -64,6 +64,11 @@ export default async function handler(
       });
     }
 
+    // Log the tier ID being requested
+    console.log("=== CREATE CHECKOUT DEBUG ===");
+    console.log("Tier ID received:", tierId);
+    console.log("Tier ID type:", typeof tierId);
+
     // Get tier details (using public view)
     const { data: tier, error: tierError } = await supabase
       .from("contribution_tiers")
@@ -74,9 +79,12 @@ export default async function handler(
       .eq("id", tierId)
       .single();
 
+    console.log("Tier fetch result:", { tier, tierError });
+
     if (tierError || !tier) {
       console.error("Tier fetch error:", JSON.stringify(tierError, null, 2));
       console.error("Attempted tier ID:", tierId);
+      console.error("Full request body:", JSON.stringify(req.body, null, 2));
       return res.status(404).json({
         success: false,
         error: "Contribution tier not found",
