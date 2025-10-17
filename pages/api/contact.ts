@@ -11,7 +11,11 @@ type ApiResponse = {
   message: string;
   data?: ContactData;
   error?: string;
+  already_subscribed?: boolean;
 };
+
+// Configuration
+const AWS_API_URL = process.env.NEXT_PUBLIC_AWS_API_URL || process.env.AWS_API_URL || "";
 
 export default async function handler(
   req: NextApiRequest,
@@ -68,74 +72,63 @@ export default async function handler(
       email: email.trim().toLowerCase(),
     };
 
-    // Call the Supabase API endpoint
-    const SUPABASE_URL =
-      process.env.NEXT_PUBLIC_SUPABASE_URL || "https://api.dinkhousepb.com";
-    const ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
+    // Check if AWS API URL is configured
+    if (!AWS_API_URL) {
+      console.error("AWS_API_URL is not configured");
+      return res.status(500).json({
+        success: false,
+        message: "Newsletter service is not configured. Please contact the administrator.",
+        error: "AWS_API_URL not set",
+      });
+    }
 
-    const response = await fetch(
-      `${SUPABASE_URL}/rest/v1/rpc/submit_newsletter_signup`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          apikey: ANON_KEY,
-        },
-        body: JSON.stringify({
-          p_email: contactData.email,
-          p_first_name: contactData.firstName,
-          p_last_name: contactData.lastName,
-        }),
+    // Call the Lambda function endpoint
+    const lambdaUrl = `${AWS_API_URL}/newsletter/subscribe`;
+
+    console.log("Calling Lambda endpoint:", lambdaUrl);
+
+    const response = await fetch(lambdaUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
       },
-    );
+      body: JSON.stringify(contactData),
+    });
 
     const result = await response.json();
 
     // Log the actual response for debugging
-    console.log("API Response:", JSON.stringify(result, null, 2));
+    console.log("Lambda API Response:", JSON.stringify(result, null, 2));
 
     if (!response.ok) {
-      console.error("API returned non-OK status:", response.status, result);
-      throw new Error(result.message || "Failed to submit");
+      console.error("Lambda API returned non-OK status:", response.status, result);
+      return res.status(response.status).json({
+        success: false,
+        message: result.message || "Failed to subscribe",
+        error: result.message,
+      });
     }
 
-    // Check if result is the direct response or wrapped
-    const actualResult = result.success !== undefined ? result : result;
-
-    if (actualResult.success) {
-      if (actualResult.already_subscribed) {
-        return res.status(200).json({
-          success: true,
-          message:
-            "You're already on our waitlist! We'll notify you when we open.",
-          data: contactData,
-        });
-      }
-
-      console.log("Contact notification signup saved:", actualResult.subscriber_id);
-
-      // New signups now require email confirmation
-      if (actualResult.requires_confirmation) {
-        return res.status(200).json({
-          success: true,
-          message:
-            "Almost there! Check your email to confirm your subscription and join the waitlist.",
-          data: contactData,
-        });
-      }
-
+    // Handle already subscribed case
+    if (result.already_subscribed) {
       return res.status(200).json({
         success: true,
-        message:
-          "Successfully joined the waitlist! We'll notify you when we open.",
+        message: result.message || "You're already on our waitlist! We'll notify you when we open.",
         data: contactData,
+        already_subscribed: true,
       });
-    } else {
-      console.error("API returned success: false", actualResult);
-      throw new Error(actualResult.message || "Submission failed");
     }
+
+    console.log("Newsletter subscription saved:", result.subscriber_id);
+
+    return res.status(200).json({
+      success: true,
+      message: result.message || "Successfully joined the waitlist! We'll notify you when we open.",
+      data: contactData,
+    });
+
   } catch (error) {
-    console.error("Error processing contact submission:", error);
+    console.error("Error processing newsletter subscription:", error);
 
     // Provide more helpful error message
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
@@ -143,7 +136,7 @@ export default async function handler(
     return res.status(500).json({
       success: false,
       message: "Internal server error",
-      error: `Failed to process contact submission: ${errorMessage}`,
+      error: `Failed to process newsletter subscription: ${errorMessage}`,
     });
   }
 }
