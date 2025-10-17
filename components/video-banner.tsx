@@ -76,7 +76,7 @@ export default function VideoBanner() {
         autoPlay
         muted
         playsInline
-        loop={VIDEO_URLS.length === 1}
+        loop={VIDEO_URLS.length <= 1}
         preload="auto"
         controls={false}
       >
