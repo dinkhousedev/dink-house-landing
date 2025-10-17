@@ -60,6 +60,9 @@ export default function ContributionModal({
     setLoading(true);
     setError("");
 
+    console.log("=== CONTRIBUTION SUBMIT ===");
+    console.log("Tier being submitted:", { id: tier.id, name: tier.name, campaign_type_id: tier.campaign_type_id });
+
     try {
       // Validate form
       if (!formData.firstName.trim()) {
@@ -82,34 +85,69 @@ export default function ContributionModal({
       }
 
       // Create checkout session
-      const response = await fetch("/api/stripe/create-checkout", {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
+
+      // Use different payload structure for Express API vs Next.js API
+      const requestBody = apiUrl ? {
+        // Express API structure (nested)
+        backer: {
+          email: formData.email.trim().toLowerCase(),
+          firstName: formData.firstName.trim(),
+          lastInitial: formData.lastInitial.trim().toUpperCase(),
+          phone: formData.phone.trim() || undefined,
+          city: formData.city.trim() || undefined,
+          state: formData.state.trim().toUpperCase() || undefined,
+        },
+        contribution: {
+          campaignId: tier.campaign_type_id,
+          tierId: tier.id,
+          amount: amountValue || tier.amount,
+          isPublic: formData.isPublic,
+          showAmount: formData.showAmount,
+        }
+      } : {
+        // Next.js API structure (flat)
+        tierId: tier.id,
+        firstName: formData.firstName.trim(),
+        lastInitial: formData.lastInitial.trim().toUpperCase(),
+        email: formData.email.trim().toLowerCase(),
+        phone: formData.phone.trim(),
+        city: formData.city.trim(),
+        state: formData.state.trim().toUpperCase(),
+        isPublic: formData.isPublic,
+        showAmount: formData.showAmount,
+        customAmount: amountValue,
+      };
+
+      const endpoint = apiUrl
+        ? `${apiUrl}/api/crowdfunding/create-checkout-session`
+        : "/api/stripe/create-checkout";
+
+      console.log("Calling API endpoint:", endpoint);
+      console.log("Request body:", requestBody);
+
+      const response = await fetch(endpoint, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          tierId: tier.id,
-          firstName: formData.firstName.trim(),
-          lastInitial: formData.lastInitial.trim().toUpperCase(),
-          email: formData.email.trim().toLowerCase(),
-          phone: formData.phone.trim(),
-          city: formData.city.trim(),
-          state: formData.state.trim().toUpperCase(),
-          isPublic: formData.isPublic,
-          showAmount: formData.showAmount,
-          customAmount: amountValue,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       const data = await response.json();
+      console.log("API response:", { status: response.status, data });
 
       if (!response.ok) {
         throw new Error(data.error || "Failed to create checkout session");
       }
 
       // Redirect to Stripe Checkout
-      if (data.url) {
-        window.location.href = data.url;
+      // Express API returns { success, data: { url } }
+      // Next.js API returns { success, url }
+      const checkoutUrl = data.data?.url || data.url;
+
+      if (checkoutUrl) {
+        window.location.href = checkoutUrl;
       } else {
         throw new Error("No checkout URL received");
       }
