@@ -11,11 +11,15 @@ import { LazyMotion, domAnimation, m } from "framer-motion";
 
 import DefaultLayout from "@/layouts/default";
 import ContributionModal from "@/components/ContributionModal";
+import { getCampaignImageUrl } from "@/config/media-urls";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || "",
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
-);
+// Initialize Supabase client only if credentials are available
+// TODO: Migrate this page to use AWS backend (API Gateway/RDS) instead of Supabase
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
+const supabase = supabaseUrl && supabaseAnonKey
+  ? createClient(supabaseUrl, supabaseAnonKey)
+  : null;
 
 interface CampaignType {
   id: string;
@@ -54,9 +58,10 @@ interface FounderEntry {
 }
 
 // Campaign images mapping
+// Note: These images need to be uploaded to S3 at media/images/campaigns/
 const CAMPAIGN_IMAGES = {
-  "ball-machines": "https://wchxzbuuwssrnaxshseu.supabase.co/storage/v1/object/public/dink-files/images_landing/ball_machine.jpg",
-  "dink-boards": "https://wchxzbuuwssrnaxshseu.supabase.co/storage/v1/object/public/dink-files/images_landing/dinkboard.webp",
+  // "ball-machines": getCampaignImageUrl("ball_machine.jpg"),
+  // "dink-boards": getCampaignImageUrl("dinkboard.webp"),
 };
 
 export default function CampaignPage() {
@@ -95,6 +100,13 @@ export default function CampaignPage() {
 
   const fetchCampaignData = async () => {
     try {
+      // Skip if Supabase is not configured
+      if (!supabase) {
+        console.log("Supabase not configured - skipping campaign data fetch");
+        setLoading(false);
+        return;
+      }
+
       console.log("Fetching campaigns from Supabase...");
       console.log("Supabase URL:", process.env.NEXT_PUBLIC_SUPABASE_URL);
 
@@ -153,6 +165,11 @@ export default function CampaignPage() {
 
   const fetchFounders = async () => {
     try {
+      // Skip if Supabase is not configured
+      if (!supabase) {
+        return;
+      }
+
       const { data, error } = await supabase
         .schema("public")
         .from("founders_wall")

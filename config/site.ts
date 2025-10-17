@@ -6,9 +6,33 @@ export const siteConfig = {
     "Premier Pickleball Facility - Indoor & Outdoor Courts, Pro Shop, Lessons, Tournaments, and Social Events. Where Champions Play and Community Thrives.",
   navItems: [
     // {
-    //   label: "CAMPAIGN",
-    //   href: "/campaign",
+    //   label: "HOME",
+    //   href: "/",
     // },
+    // {
+    //   label: "COURTS",
+    //   href: "/courts",
+    // },
+    // {
+    //   label: "MEMBERSHIPS",
+    //   href: "/memberships",
+    // },
+    // {
+    //   label: "PROGRAMS",
+    //   href: "/programs",
+    // },
+    // {
+    //   label: "EVENTS",
+    //   href: "/events",
+    // },
+    // {
+    //   label: "PRO SHOP",
+    //   href: "/shop",
+    // },
+    {
+      label: "CAMPAIGN",
+      href: "/campaign",
+    },
     {
       label: "FAQs",
       href: "/#faqs",

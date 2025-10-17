@@ -16,6 +16,11 @@ const nextConfig = {
         hostname: 'wchxzbuuwssrnaxshseu.supabase.co',
         pathname: '/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'dznfm70a0fusp.cloudfront.net',
+        pathname: '/media/**',
+      },
     ],
   },
 }

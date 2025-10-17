@@ -1,12 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
+import { MEDIA_URLS } from "@/config/media-urls";
 
-const VIDEO_URLS = [
-  "https://wchxzbuuwssrnaxshseu.supabase.co/storage/v1/object/public/dink-files/video/VID_20251001_113443.mp4",
-  "https://wchxzbuuwssrnaxshseu.supabase.co/storage/v1/object/public/dink-files/video/VID_20251001_113600.mp4",
-];
-
-const LOGO_URL = "https://wchxzbuuwssrnaxshseu.supabase.co/storage/v1/object/public/dink-files/dinklogo.jpg";
+const VIDEO_URLS = MEDIA_URLS.videos;
+const LOGO_URL = MEDIA_URLS.logo;
 
 export default function VideoBanner() {
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
@@ -79,7 +76,7 @@ export default function VideoBanner() {
         autoPlay
         muted
         playsInline
-        loop={VIDEO_URLS.length === 1}
+        loop={VIDEO_URLS.length <= 1}
         preload="auto"
         controls={false}
       >

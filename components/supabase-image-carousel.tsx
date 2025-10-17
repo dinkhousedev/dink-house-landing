@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import ImageCarousel from "./image-carousel";
-import { CAROUSEL_IMAGES, SUPABASE_CONFIG } from "@/config/carousel-images";
+import { CAROUSEL_IMAGES } from "@/config/carousel-images";
+import { getCourtImageUrl } from "@/config/media-urls";
 
 interface SupabaseImageCarouselProps {
   autoplayInterval?: number;
@@ -21,22 +22,12 @@ export const SupabaseImageCarousel = ({
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Build image URLs from config with responsive transformations
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "https://wchxzbuuwssrnaxshseu.supabase.co";
-    const { bucket, folder } = SUPABASE_CONFIG;
-
+    // Build image URLs from CloudFront CDN
     const imageData = CAROUSEL_IMAGES.map((filename) => {
-      const baseUrl = `${supabaseUrl}/storage/v1/object/public/${bucket}/${folder}/${filename}`;
-
-      // Use Supabase image transformations for responsive images
-      // Browser will choose appropriate size based on viewport
-      const mobileSrc = `${baseUrl}?width=640&quality=85`;
-      const tabletSrc = `${baseUrl}?width=800&quality=85`;
-      const desktopSrc = `${baseUrl}?width=1200&quality=85`;
+      const imageUrl = getCourtImageUrl(filename);
 
       return {
-        src: desktopSrc, // Default to desktop size
-        srcSet: `${mobileSrc} 640w, ${tabletSrc} 800w, ${desktopSrc} 1200w`,
+        src: imageUrl,
         alt: filename.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " "),
       };
     });
