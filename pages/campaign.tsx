@@ -11,6 +11,7 @@ import { LazyMotion, domAnimation, m } from "framer-motion";
 
 import DefaultLayout from "@/layouts/default";
 import ContributionModal from "@/components/ContributionModal";
+import { getCampaignImageUrl } from "@/config/media-urls";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL || "",
@@ -54,9 +55,10 @@ interface FounderEntry {
 }
 
 // Campaign images mapping
+// Note: These images need to be uploaded to S3 at media/images/campaigns/
 const CAMPAIGN_IMAGES = {
-  "ball-machines": "https://wchxzbuuwssrnaxshseu.supabase.co/storage/v1/object/public/dink-files/images_landing/ball_machine.jpg",
-  "dink-boards": "https://wchxzbuuwssrnaxshseu.supabase.co/storage/v1/object/public/dink-files/images_landing/dinkboard.webp",
+  // "ball-machines": getCampaignImageUrl("ball_machine.jpg"),
+  // "dink-boards": getCampaignImageUrl("dinkboard.webp"),
 };
 
 export default function CampaignPage() {
