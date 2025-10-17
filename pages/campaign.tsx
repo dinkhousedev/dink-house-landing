@@ -13,10 +13,13 @@ import DefaultLayout from "@/layouts/default";
 import ContributionModal from "@/components/ContributionModal";
 import { getCampaignImageUrl } from "@/config/media-urls";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || "",
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
-);
+// Initialize Supabase client only if credentials are available
+// TODO: Migrate this page to use AWS backend (API Gateway/RDS) instead of Supabase
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
+const supabase = supabaseUrl && supabaseAnonKey
+  ? createClient(supabaseUrl, supabaseAnonKey)
+  : null;
 
 interface CampaignType {
   id: string;
@@ -97,10 +100,18 @@ export default function CampaignPage() {
 
   const fetchCampaignData = async () => {
     try {
+      // Skip if Supabase is not configured
+      if (!supabase) {
+        console.log("Supabase not configured - skipping campaign data fetch");
+        setLoading(false);
+        return;
+      }
+
       console.log("Fetching campaigns from Supabase...");
       console.log("Supabase URL:", process.env.NEXT_PUBLIC_SUPABASE_URL);
 
       const { data: campaignsData, error: campaignsError } = await supabase
+        .schema("public")
         .from("campaign_types")
         .select("*")
         .eq("is_active", true)
@@ -116,6 +127,7 @@ export default function CampaignPage() {
       setCampaigns(campaignsData || []);
 
       const { data: tiersData, error: tiersError } = await supabase
+        .schema("public")
         .from("contribution_tiers")
         .select("*")
         .eq("is_active", true)
@@ -143,6 +155,7 @@ export default function CampaignPage() {
       setTiers(tiersByCampaign);
       console.log("Campaigns loaded:", campaignsData?.length);
       console.log("Tiers loaded:", tiersData?.length);
+      console.log("First 3 tier IDs:", tiersData?.slice(0, 3).map(t => ({ id: t.id, name: t.name })));
     } catch (error) {
       console.error("Error fetching campaign data:", error);
     } finally {
@@ -152,7 +165,13 @@ export default function CampaignPage() {
 
   const fetchFounders = async () => {
     try {
+      // Skip if Supabase is not configured
+      if (!supabase) {
+        return;
+      }
+
       const { data, error } = await supabase
+        .schema("public")
         .from("founders_wall")
         .select("*")
         .order("is_featured", { ascending: false })
