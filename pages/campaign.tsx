@@ -111,6 +111,7 @@ export default function CampaignPage() {
       console.log("Supabase URL:", process.env.NEXT_PUBLIC_SUPABASE_URL);
 
       const { data: campaignsData, error: campaignsError } = await supabase
+        .schema("public")
         .from("campaign_types")
         .select("*")
         .eq("is_active", true)
@@ -126,6 +127,7 @@ export default function CampaignPage() {
       setCampaigns(campaignsData || []);
 
       const { data: tiersData, error: tiersError } = await supabase
+        .schema("public")
         .from("contribution_tiers")
         .select("*")
         .eq("is_active", true)
@@ -153,6 +155,7 @@ export default function CampaignPage() {
       setTiers(tiersByCampaign);
       console.log("Campaigns loaded:", campaignsData?.length);
       console.log("Tiers loaded:", tiersData?.length);
+      console.log("First 3 tier IDs:", tiersData?.slice(0, 3).map(t => ({ id: t.id, name: t.name })));
     } catch (error) {
       console.error("Error fetching campaign data:", error);
     } finally {
@@ -168,6 +171,7 @@ export default function CampaignPage() {
       }
 
       const { data, error } = await supabase
+        .schema("public")
         .from("founders_wall")
         .select("*")
         .order("is_featured", { ascending: false })
