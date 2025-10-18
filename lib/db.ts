@@ -1,4 +1,4 @@
-import { Pool, PoolClient, QueryResult } from "pg";
+import { Pool, PoolClient, QueryResult, QueryResultRow } from "pg";
 
 const pool = new Pool({
   host: process.env.DB_HOST || "localhost",
@@ -21,7 +21,7 @@ export default pool;
 /**
  * Execute a SQL query
  */
-export async function query<T = any>(
+export async function query<T extends QueryResultRow = any>(
   text: string,
   params?: any[],
 ): Promise<QueryResult<T>> {
@@ -52,7 +52,7 @@ export async function transaction<T>(
 /**
  * Call a PostgreSQL function using SELECT syntax
  */
-export async function callFunction<T = any>(
+export async function callFunction<T extends QueryResultRow = any>(
   functionName: string,
   params: Record<string, any> = {},
 ): Promise<T> {
