@@ -15,7 +15,8 @@ type ApiResponse = {
 };
 
 // Configuration
-const AWS_API_URL = process.env.NEXT_PUBLIC_AWS_API_URL || process.env.AWS_API_URL || "";
+const AWS_API_URL =
+  process.env.NEXT_PUBLIC_AWS_API_URL || process.env.AWS_API_URL || "";
 
 export default async function handler(
   req: NextApiRequest,
@@ -75,9 +76,11 @@ export default async function handler(
     // Check if AWS API URL is configured
     if (!AWS_API_URL) {
       console.error("AWS_API_URL is not configured");
+
       return res.status(500).json({
         success: false,
-        message: "Newsletter service is not configured. Please contact the administrator.",
+        message:
+          "Newsletter service is not configured. Please contact the administrator.",
         error: "AWS_API_URL not set",
       });
     }
@@ -101,7 +104,12 @@ export default async function handler(
     console.log("Lambda API Response:", JSON.stringify(result, null, 2));
 
     if (!response.ok) {
-      console.error("Lambda API returned non-OK status:", response.status, result);
+      console.error(
+        "Lambda API returned non-OK status:",
+        response.status,
+        result,
+      );
+
       return res.status(response.status).json({
         success: false,
         message: result.message || "Failed to subscribe",
@@ -113,7 +121,9 @@ export default async function handler(
     if (result.already_subscribed) {
       return res.status(200).json({
         success: true,
-        message: result.message || "You're already on our waitlist! We'll notify you when we open.",
+        message:
+          result.message ||
+          "You're already on our waitlist! We'll notify you when we open.",
         data: contactData,
         already_subscribed: true,
       });
@@ -123,15 +133,17 @@ export default async function handler(
 
     return res.status(200).json({
       success: true,
-      message: result.message || "Successfully joined the waitlist! We'll notify you when we open.",
+      message:
+        result.message ||
+        "Successfully joined the waitlist! We'll notify you when we open.",
       data: contactData,
     });
-
   } catch (error) {
     console.error("Error processing newsletter subscription:", error);
 
     // Provide more helpful error message
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
 
     return res.status(500).json({
       success: false,
