@@ -1,5 +1,5 @@
 import React from "react";
-import { Icon } from "@iconify/react";
+import { Slash, Construction, CircleDot, FileSignature } from "lucide-react";
 
 import RowSteps from "./row-steps";
 
@@ -46,9 +46,9 @@ export default function RoadmapStepper() {
     <div className="w-full max-w-3xl mx-auto">
       <div className="mb-8 text-center">
         <div className="flex justify-center mb-4">
-          <Icon className="text-primary text-4xl mr-2" icon="lucide:racquet" />
+          <Slash className="text-primary text-4xl mr-2" size={36} />
           <h2 className="text-2xl font-bold mb-2">THE DINK HOUSE</h2>
-          <Icon className="text-primary text-4xl ml-2" icon="lucide:racquet" />
+          <Slash className="text-primary text-4xl ml-2" size={36} />
         </div>
         <h3 className="text-xl font-bold mb-2">
           Facility Construction Timeline
@@ -67,9 +67,7 @@ export default function RoadmapStepper() {
 
         <div className="mt-8 p-4 bg-black rounded-medium border border-primary">
           <div className="flex items-start gap-3">
-            <div className="mt-1 text-primary">
-              <Icon height={24} icon={getStepIcon(currentStep)} width={24} />
-            </div>
+            <div className="mt-1 text-primary">{getStepIcon(currentStep)}</div>
             <div>
               <h3 className="font-medium text-medium">
                 {getStepTitle(currentStep)}
@@ -85,16 +83,16 @@ export default function RoadmapStepper() {
   );
 }
 
-function getStepIcon(step: number): string {
+function getStepIcon(step: number): React.ReactNode {
   switch (step) {
     case 0:
-      return "lucide:file-signature";
+      return <FileSignature size={24} />;
     case 1:
-      return "lucide:construction";
+      return <Construction size={24} />;
     case 2:
-      return "lucide:racquet";
+      return <Slash size={24} />;
     default:
-      return "lucide:milestone";
+      return <CircleDot size={24} />;
   }
 }
 

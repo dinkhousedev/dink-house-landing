@@ -1,12 +1,18 @@
 "use client";
 
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import { Button } from "@heroui/button";
 
 import { Head } from "./head";
 
 import { Navbar } from "@/components/navbar";
-import ResubscribeModal from "@/components/ResubscribeModal";
+
+// Dynamically import modal
+const ResubscribeModal = dynamic(
+  () => import("@/components/ResubscribeModal"),
+  { ssr: false },
+);
 
 export default function DefaultLayout({
   children,
