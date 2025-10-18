@@ -12,6 +12,8 @@ import { Checkbox } from "@heroui/react";
 import { Chip } from "@heroui/chip";
 import { Icon } from "@iconify/react";
 
+import { logger } from "@/lib/logger";
+
 interface ContributionTier {
   id: string;
   campaign_type_id: string;
@@ -61,8 +63,8 @@ export default function ContributionModal({
     setLoading(true);
     setError("");
 
-    console.log("=== CONTRIBUTION SUBMIT ===");
-    console.log("Tier being submitted:", {
+    logger.info("=== CONTRIBUTION SUBMIT ===");
+    logger.debug("Tier being submitted:", {
       id: tier.id,
       name: tier.name,
       campaign_type_id: tier.campaign_type_id,
@@ -96,7 +98,8 @@ export default function ContributionModal({
       const awsApiUrl = process.env.NEXT_PUBLIC_AWS_API_URL || "";
 
       // Get base URL for redirects
-      const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+      const baseUrl =
+        process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
 
       // AWS Lambda expects flat structure
       const requestBody = {
@@ -119,8 +122,8 @@ export default function ContributionModal({
         ? `${awsApiUrl}/campaigns/checkout`
         : "/api/stripe/create-checkout";
 
-      console.log("Calling API endpoint:", endpoint);
-      console.log("Request body:", requestBody);
+      logger.debug("Calling API endpoint:", endpoint);
+      logger.debug("Request body:", requestBody);
 
       const response = await fetch(endpoint, {
         method: "POST",
@@ -132,10 +135,12 @@ export default function ContributionModal({
 
       const data = await response.json();
 
-      console.log("API response:", { status: response.status, data });
+      logger.debug("API response:", { status: response.status, data });
 
       if (!response.ok) {
-        throw new Error(data.message || data.error || "Failed to create checkout session");
+        throw new Error(
+          data.message || data.error || "Failed to create checkout session",
+        );
       }
 
       // Redirect to Stripe Checkout
@@ -143,12 +148,13 @@ export default function ContributionModal({
       const checkoutUrl = data.sessionUrl || data.url;
 
       if (checkoutUrl) {
+        onSuccess?.();
         window.location.href = checkoutUrl;
       } else {
         throw new Error("No checkout URL received");
       }
     } catch (err) {
-      console.error("Error creating checkout:", err);
+      logger.error("Error creating checkout:", err);
       setError(err instanceof Error ? err.message : "Something went wrong");
       setLoading(false);
     }

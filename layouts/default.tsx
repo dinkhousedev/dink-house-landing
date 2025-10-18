@@ -13,57 +13,7 @@ export default function DefaultLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [email, setEmail] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState<{
-    type: "success" | "error";
-    text: string;
-  } | null>(null);
   const [isResubscribeModalOpen, setIsResubscribeModalOpen] = useState(false);
-
-  const handleNewsletterSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setMessage(null);
-
-    try {
-      const response = await fetch("/api/contact", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email,
-          firstName: "",
-          lastName: "",
-        }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setMessage({
-          type: "success",
-          text: data.message.includes("already on our waitlist")
-            ? "You're already subscribed!"
-            : "Thank you for subscribing!",
-        });
-        setEmail("");
-      } else {
-        setMessage({
-          type: "error",
-          text: data.error || "Something went wrong",
-        });
-      }
-    } catch (error) {
-      setMessage({
-        type: "error",
-        text: "Network error. Please try again.",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <div className="relative flex flex-col min-h-screen">

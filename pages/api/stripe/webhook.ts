@@ -4,6 +4,8 @@ import { buffer } from "micro";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 
+import { logger } from "@/lib/logger";
+
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
   apiVersion: "2025-09-30.clover",
 });
@@ -21,14 +23,6 @@ export const config = {
     bodyParser: false,
   },
 };
-
-interface BenefitDetail {
-  type: string;
-  text?: string;
-  details?: Record<string, unknown>;
-  lifetime?: boolean;
-  expiresAt?: string;
-}
 
 interface EmailData {
   first_name: string;
@@ -257,7 +251,7 @@ export default async function handler(
   const sig = req.headers["stripe-signature"];
 
   if (!sig) {
-    console.error("Missing stripe-signature header");
+    logger.error("Missing stripe-signature header");
 
     return res.status(400).json({ error: "Missing stripe-signature header" });
   }
@@ -269,14 +263,14 @@ export default async function handler(
 
     event = stripe.webhooks.constructEvent(buf, sig, webhookSecret);
   } catch (err) {
-    console.error("Webhook signature verification failed:", err);
+    logger.error("Webhook signature verification failed:", err);
 
     return res.status(400).json({
       error: `Webhook signature verification failed: ${err instanceof Error ? err.message : "Unknown error"}`,
     });
   }
 
-  console.log(`Processing webhook event: ${event.type}`);
+  logger.info(`Processing webhook event: ${event.type}`);
 
   try {
     switch (event.type) {
@@ -309,12 +303,12 @@ export default async function handler(
       }
 
       default:
-        console.log(`Unhandled event type: ${event.type}`);
+        logger.warn(`Unhandled event type: ${event.type}`);
     }
 
     return res.status(200).json({ received: true });
   } catch (error) {
-    console.error("Error processing webhook:", error);
+    logger.error("Error processing webhook:", error);
 
     return res.status(500).json({
       error: error instanceof Error ? error.message : "Internal server error",
@@ -323,14 +317,13 @@ export default async function handler(
 }
 
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
-  console.log("Processing checkout.session.completed", session.id);
+  logger.info("Processing checkout.session.completed", session.id);
 
   const contributionId = session.metadata?.contribution_id;
   const backerId = session.metadata?.backer_id;
-  const tierId = session.metadata?.tier_id;
 
   if (!contributionId) {
-    console.error("Missing contribution_id in session metadata");
+    logger.error("Missing contribution_id in session metadata");
 
     return;
   }
@@ -345,11 +338,11 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     });
 
     if (updateError) {
-      console.error("Error updating contribution:", updateError);
+      logger.error("Error updating contribution:", updateError);
       throw updateError;
     }
 
-    console.log("Contribution updated successfully:", contributionId);
+    logger.info("Contribution updated successfully:", contributionId);
 
     // Note: The complete_contribution RPC function automatically:
     // 1. Allocates benefits from tier via database trigger
@@ -366,13 +359,13 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       );
 
       if (emailError) {
-        console.error("Error queuing thank you email:", emailError);
+        logger.error("Error queuing thank you email:", emailError);
       } else if (emailResult?.success) {
-        console.log(
+        logger.info(
           "Thank you email queued successfully:",
           emailResult.email_log_id,
         );
-        console.log("Email will be sent to:", emailResult.recipient);
+        logger.debug("Email will be sent to:", emailResult.recipient);
 
         // Send the email using Supabase Edge Function
         const emailData = emailResult.email_data;
@@ -390,7 +383,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
             });
 
           if (sendError) {
-            console.error("Error sending email via SendGrid:", sendError);
+            logger.error("Error sending email via SendGrid:", sendError);
 
             // Update email log to failed
             await supabase
@@ -401,7 +394,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
               })
               .eq("id", emailResult.email_log_id);
           } else {
-            console.log("Email sent successfully via SendGrid:", sendResult);
+            logger.info("Email sent successfully via SendGrid:", sendResult);
 
             // Update email log to sent
             await supabase
@@ -414,7 +407,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
               .eq("id", emailResult.email_log_id);
           }
         } catch (sendErr) {
-          console.error("Exception sending email:", sendErr);
+          logger.error("Exception sending email:", sendErr);
 
           // Update email log to failed
           await supabase
@@ -427,10 +420,10 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
             .eq("id", emailResult.email_log_id);
         }
       } else {
-        console.error("Failed to queue thank you email:", emailResult?.error);
+        logger.error("Failed to queue thank you email:", emailResult?.error);
       }
     } catch (emailErr) {
-      console.error("Exception queuing thank you email:", emailErr);
+      logger.error("Exception queuing thank you email:", emailErr);
     }
 
     // Check if this qualifies for court sponsorship ($1000+)
@@ -456,19 +449,19 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
           sponsorship_start: new Date().toISOString().split("T")[0],
         });
 
-        console.log("Created court sponsor entry");
+        logger.info("Created court sponsor entry");
       }
     }
 
-    console.log("Checkout completed processing finished");
+    logger.info("Checkout completed processing finished");
   } catch (error) {
-    console.error("Error in handleCheckoutCompleted:", error);
+    logger.error("Error in handleCheckoutCompleted:", error);
     throw error;
   }
 }
 
 async function handlePaymentSucceeded(paymentIntent: Stripe.PaymentIntent) {
-  console.log("Processing payment_intent.succeeded", paymentIntent.id);
+  logger.info("Processing payment_intent.succeeded", paymentIntent.id);
 
   const { error } = await supabase
     .from("contributions")
@@ -479,12 +472,12 @@ async function handlePaymentSucceeded(paymentIntent: Stripe.PaymentIntent) {
     .eq("stripe_payment_intent_id", paymentIntent.id);
 
   if (error) {
-    console.error("Error updating contribution on payment success:", error);
+    logger.error("Error updating contribution on payment success:", error);
   }
 }
 
 async function handlePaymentFailed(paymentIntent: Stripe.PaymentIntent) {
-  console.log("Processing payment_intent.payment_failed", paymentIntent.id);
+  logger.info("Processing payment_intent.payment_failed", paymentIntent.id);
 
   const { error } = await supabase
     .from("contributions")
@@ -494,12 +487,12 @@ async function handlePaymentFailed(paymentIntent: Stripe.PaymentIntent) {
     .eq("stripe_payment_intent_id", paymentIntent.id);
 
   if (error) {
-    console.error("Error updating contribution on payment failure:", error);
+    logger.error("Error updating contribution on payment failure:", error);
   }
 }
 
 async function handleChargeRefunded(charge: Stripe.Charge) {
-  console.log("Processing charge.refunded", charge.id);
+  logger.info("Processing charge.refunded", charge.id);
 
   // Find contribution
   const { data: contribution, error: fetchError } = await supabase
@@ -509,7 +502,7 @@ async function handleChargeRefunded(charge: Stripe.Charge) {
     .single();
 
   if (fetchError || !contribution) {
-    console.error("Error finding contribution for refund:", fetchError);
+    logger.error("Error finding contribution for refund:", fetchError);
 
     return;
   }
@@ -524,7 +517,7 @@ async function handleChargeRefunded(charge: Stripe.Charge) {
     .eq("id", contribution.id);
 
   if (updateError) {
-    console.error("Error updating contribution on refund:", updateError);
+    logger.error("Error updating contribution on refund:", updateError);
 
     return;
   }
@@ -538,7 +531,7 @@ async function handleChargeRefunded(charge: Stripe.Charge) {
     .eq("contribution_id", contribution.id);
 
   if (benefitsError) {
-    console.error("Error deactivating benefits:", benefitsError);
+    logger.error("Error deactivating benefits:", benefitsError);
   }
 
   // Deactivate court sponsor
@@ -550,8 +543,8 @@ async function handleChargeRefunded(charge: Stripe.Charge) {
     .eq("contribution_id", contribution.id);
 
   if (sponsorError) {
-    console.error("Error deactivating court sponsor:", sponsorError);
+    logger.error("Error deactivating court sponsor:", sponsorError);
   }
 
-  console.log("Refund processing completed");
+  logger.info("Refund processing completed");
 }

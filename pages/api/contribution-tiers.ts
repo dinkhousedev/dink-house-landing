@@ -2,6 +2,8 @@ import type { NextApiRequest, NextApiResponse } from "next";
 
 import { Pool } from "pg";
 
+import { logger } from "@/lib/logger";
+
 const pool = new Pool({
   host: process.env.DB_HOST,
   port: parseInt(process.env.DB_PORT || "5432"),
@@ -56,7 +58,7 @@ export default async function handler(
 
     res.status(200).json(result.rows);
   } catch (error: any) {
-    console.error("Error fetching contribution tiers:", error);
+    logger.error("Error fetching contribution tiers:", error);
     res.status(500).json({
       error: "Failed to fetch contribution tiers",
       details: error.message,
