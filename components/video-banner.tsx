@@ -9,14 +9,9 @@ const LOGO_URL = MEDIA_URLS.logo;
 
 export default function VideoBanner() {
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
-  const [isClient, setIsClient] = useState(false);
+  const [isVideoLoaded, setIsVideoLoaded] = useState(false);
   const [logoFaded, setLogoFaded] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
-
-  // Ensure component only renders on client
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
 
   // Trigger logo fade-out after a short delay on mount
   useEffect(() => {
@@ -38,9 +33,22 @@ export default function VideoBanner() {
     };
 
     const handleCanPlay = () => {
-      video.play().catch((error) => {
-        logger.warn("Video autoplay failed:", error);
-      });
+      setIsVideoLoaded(true);
+      // Defer autoplay using requestIdleCallback for better performance
+      if ("requestIdleCallback" in window) {
+        requestIdleCallback(() => {
+          video.play().catch((error) => {
+            logger.warn("Video autoplay failed:", error);
+          });
+        });
+      } else {
+        // Fallback for browsers without requestIdleCallback
+        setTimeout(() => {
+          video.play().catch((error) => {
+            logger.warn("Video autoplay failed:", error);
+          });
+        }, 100);
+      }
     };
 
     video.addEventListener("ended", handleVideoEnded);
@@ -56,33 +64,40 @@ export default function VideoBanner() {
   useEffect(() => {
     const video = videoRef.current;
 
-    if (video && isClient) {
+    if (video && isVideoLoaded) {
       video.load();
-      // Attempt to play after a short delay to ensure load completes
-      setTimeout(() => {
-        video.play().catch((error) => {
-          logger.warn("Video autoplay failed:", error);
+      // Defer playback using requestIdleCallback
+      if ("requestIdleCallback" in window) {
+        requestIdleCallback(() => {
+          video.play().catch((error) => {
+            logger.warn("Video autoplay failed:", error);
+          });
         });
-      }, 100);
+      } else {
+        setTimeout(() => {
+          video.play().catch((error) => {
+            logger.warn("Video autoplay failed:", error);
+          });
+        }, 100);
+      }
     }
-  }, [currentVideoIndex, isClient]);
-
-  if (!isClient) {
-    return null;
-  }
+  }, [currentVideoIndex, isVideoLoaded]);
 
   return (
-    <div className="relative w-full h-[50vh] sm:h-[60vh] lg:h-[70vh] overflow-hidden">
+    <div className="relative w-full h-[50vh] sm:h-[60vh] lg:h-[70vh] overflow-hidden bg-black">
+      {/* Server-rendered placeholder to prevent layout shift */}
+      <div className="absolute inset-0 bg-black" />
+
       {/* Video Background */}
       <video
         ref={videoRef}
-        autoPlay
         muted
         playsInline
         className="absolute inset-0 w-full h-full object-cover"
         controls={false}
         loop={VIDEO_URLS.length <= 1}
-        preload="auto"
+        poster={LOGO_URL}
+        preload="metadata"
       >
         <source src={VIDEO_URLS[currentVideoIndex]} type="video/mp4" />
         Your browser does not support the video tag.
