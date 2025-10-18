@@ -66,7 +66,7 @@ export default function FAQsSection() {
           </h3>
           <p className="text-black/80 text-base mb-6 max-w-2xl mx-auto">
             Join our notification list and be among the first to experience Bell
-            County&apos;s premier pickleball facility
+            County's premier pickleball facility
           </p>
           <Button
             className="h-12 bg-black px-8 text-base font-bold uppercase text-dink-lime transition-all hover:scale-105"
