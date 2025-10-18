@@ -49,7 +49,6 @@ export const Navbar = () => {
                   linkStyles({ color: "foreground" }),
                   "data-[active=true]:text-dink-lime data-[active=true]:font-bold font-semibold uppercase text-sm tracking-wider hover:text-dink-lime transition-colors",
                 )}
-                color="foreground"
                 href={item.href}
               >
                 {item.label}
