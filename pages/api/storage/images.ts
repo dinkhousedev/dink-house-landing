@@ -1,5 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 
+import { logger } from "@/lib/logger";
+
 interface StorageFile {
   name: string;
   id: string;
@@ -50,7 +52,7 @@ export default async function handler(
     // List files in the bucket
     const listUrl = `${supabaseUrl}/storage/v1/object/list/${bucketName}${storagePath ? `/${storagePath}` : ""}`;
 
-    console.log("Fetching images from:", listUrl);
+    logger.info("Fetching images from:", listUrl);
 
     const response = await fetch(listUrl, {
       headers: {
@@ -62,7 +64,7 @@ export default async function handler(
     if (!response.ok) {
       const errorText = await response.text();
 
-      console.error("Supabase storage error:", errorText);
+      logger.error("Supabase storage error:", errorText);
 
       return res.status(response.status).json({
         success: false,
@@ -88,14 +90,14 @@ export default async function handler(
       };
     });
 
-    console.log(`Found ${images.length} images`);
+    logger.info(`Found ${images.length} images`);
 
     return res.status(200).json({
       success: true,
       images,
     });
   } catch (error) {
-    console.error("Error fetching images:", error);
+    logger.error("Error fetching images:", error);
 
     return res.status(500).json({
       success: false,

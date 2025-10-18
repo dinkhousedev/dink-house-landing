@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 
 import DefaultLayout from "@/layouts/default";
+import { logger } from "@/lib/logger";
 
 const API_URL =
   process.env.NEXT_PUBLIC_SUPABASE_URL ||
@@ -56,7 +57,7 @@ export default function ConfirmSubscription() {
           );
         }
       } catch (error) {
-        console.error("Confirmation error:", error);
+        logger.error("Confirmation error:", error);
         setStatus("error");
         setMessage(
           "Something went wrong. Please try again or contact support.",

@@ -23,7 +23,6 @@ export const SupabaseImageCarousel = ({
   const [images, setImages] = useState<
     Array<{ src: string; srcSet?: string; alt: string }>
   >([]);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     // Build image URLs from CloudFront CDN
@@ -37,7 +36,6 @@ export const SupabaseImageCarousel = ({
     });
 
     setImages(imageData);
-    setLoading(false);
   }, []);
 
   if (images.length === 0) {

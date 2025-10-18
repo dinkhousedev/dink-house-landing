@@ -14,6 +14,8 @@ import { Skeleton } from "@heroui/skeleton";
 import { Chip } from "@heroui/chip";
 import { motion, AnimatePresence } from "framer-motion";
 
+import { logger } from "@/lib/logger";
+
 interface ContactFormModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -83,7 +85,7 @@ const ContactFormModal: React.FC<ContactFormModalProps> = ({
           setHasRestoredData(true);
         }
       } catch (error) {
-        console.error("Error loading saved form data:", error);
+        logger.error("Error loading saved form data:", error);
       } finally {
         setIsLoading(false);
       }
@@ -100,7 +102,7 @@ const ContactFormModal: React.FC<ContactFormModalProps> = ({
       delete dataToSave._honeypot; // Don't save honeypot
       localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
     } catch (error) {
-      console.error("Error saving form data:", error);
+      logger.error("Error saving form data:", error);
     }
   }, [formData]);
 
