@@ -6,7 +6,11 @@ import { logger } from "@/lib/logger";
 
 // Create PostgreSQL connection pool
 const pool = new Pool({
-  connectionString: `postgresql://${encodeURIComponent(process.env.DB_USER || "postgres")}:${encodeURIComponent(process.env.DB_PASSWORD || "")}@${process.env.DB_HOST}:${process.env.DB_PORT || "5432"}/${process.env.DB_NAME || "dink_house"}?sslmode=${process.env.DB_SSL === "true" ? "require" : "disable"}`,
+  host: process.env.DB_HOST,
+  port: parseInt(process.env.DB_PORT || "5432"),
+  database: process.env.DB_NAME || "dink_house",
+  user: process.env.DB_USER || "postgres",
+  password: process.env.DB_PASSWORD,
   ssl: process.env.DB_SSL === "true" ? { rejectUnauthorized: false } : false,
   max: 5,
   idleTimeoutMillis: 30000,
