@@ -56,7 +56,7 @@ export const Navbar = () => {
             </NavbarItem>
           ))}
         </div>
-    </NavbarContent>
+      </NavbarContent>
 
       <NavbarContent
         className="hidden sm:flex basis-1/5 sm:basis-full"
