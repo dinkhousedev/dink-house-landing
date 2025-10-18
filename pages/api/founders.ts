@@ -6,6 +6,7 @@ import { logger } from "@/lib/logger";
 
 const pool = new Pool({
   connectionString: `postgresql://${encodeURIComponent(process.env.DB_USER || "postgres")}:${encodeURIComponent(process.env.DB_PASSWORD || "")}@${process.env.DB_HOST}:${process.env.DB_PORT || "5432"}/${process.env.DB_NAME || "dink_house"}?sslmode=${process.env.DB_SSL === "true" ? "require" : "disable"}`,
+  ssl: process.env.DB_SSL === "true" ? { rejectUnauthorized: false } : false,
   max: 5,
   idleTimeoutMillis: 30000,
 });
