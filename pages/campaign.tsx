@@ -111,7 +111,7 @@ export default function CampaignPage() {
       console.log("Tiers response:", tiersData);
 
       const tiersByCampaign: Record<string, ContributionTier[]> = {};
-      (tiersData || []).forEach((tier) => {
+      (tiersData || []).forEach((tier: ContributionTier) => {
         if (!tiersByCampaign[tier.campaign_type_id]) {
           tiersByCampaign[tier.campaign_type_id] = [];
         }
@@ -125,7 +125,7 @@ export default function CampaignPage() {
       setTiers(tiersByCampaign);
       console.log("Campaigns loaded:", campaignsData?.length);
       console.log("Tiers loaded:", tiersData?.length);
-      console.log("First 3 tier IDs:", tiersData?.slice(0, 3).map(t => ({ id: t.id, name: t.name })));
+      console.log("First 3 tier IDs:", tiersData?.slice(0, 3).map((t: ContributionTier) => ({ id: t.id, name: t.name })));
     } catch (error) {
       console.error("Error fetching campaign data:", error);
     } finally {
