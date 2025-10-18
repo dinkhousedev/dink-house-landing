@@ -5,12 +5,7 @@ import { Pool } from "pg";
 import { logger } from "@/lib/logger";
 
 const pool = new Pool({
-  host: process.env.DB_HOST,
-  port: parseInt(process.env.DB_PORT || "5432"),
-  database: process.env.DB_NAME || "dink_house",
-  user: process.env.DB_USER || "postgres",
-  password: process.env.DB_PASSWORD,
-  ssl: process.env.DB_SSL === "true" ? { rejectUnauthorized: false } : false,
+  connectionString: `postgresql://${encodeURIComponent(process.env.DB_USER || "postgres")}:${encodeURIComponent(process.env.DB_PASSWORD || "")}@${process.env.DB_HOST}:${process.env.DB_PORT || "5432"}/${process.env.DB_NAME || "dink_house"}?sslmode=${process.env.DB_SSL === "true" ? "require" : "disable"}`,
   max: 5,
   idleTimeoutMillis: 30000,
 });
@@ -24,6 +19,8 @@ export default async function handler(
   }
 
   try {
+    logger.info("Fetching founders from database...");
+
     const result = await pool.query(
       `SELECT
         id,
@@ -39,12 +36,19 @@ export default async function handler(
       ORDER BY is_featured DESC, total_contributed DESC, created_at DESC`,
     );
 
+    logger.info(`Successfully fetched ${result.rows.length} founders`);
     res.status(200).json(result.rows);
   } catch (error: any) {
-    logger.error("Error fetching founders:", error);
+    logger.error("Error fetching founders:", {
+      message: error.message,
+      code: error.code,
+      detail: error.detail,
+      hint: error.hint,
+    });
     res.status(500).json({
       error: "Failed to fetch founders",
       details: error.message,
+      code: error.code,
     });
   }
 }
