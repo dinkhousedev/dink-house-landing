@@ -207,10 +207,10 @@ export default function IndexPage() {
       <section className="mx-auto w-full max-w-7xl px-4 py-12 sm:py-16 sm:px-6 lg:px-8">
         <div className="w-full">
           <SupabaseImageCarousel
+            autoplayInterval={5000}
             className="w-full h-[400px] sm:h-[500px] lg:h-[600px] rounded-xl overflow-hidden"
             showControls={true}
             showIndicators={true}
-            autoplayInterval={5000}
           />
         </div>
       </section>

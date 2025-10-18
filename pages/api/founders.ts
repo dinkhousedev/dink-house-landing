@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
+
 import { Pool } from "pg";
 
 const pool = new Pool({
@@ -14,7 +15,7 @@ const pool = new Pool({
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse
+  res: NextApiResponse,
 ) {
   if (req.method !== "GET") {
     return res.status(405).json({ error: "Method not allowed" });
@@ -33,7 +34,7 @@ export default async function handler(
         created_at,
         updated_at
       FROM public.founders_wall
-      ORDER BY is_featured DESC, total_contributed DESC, created_at DESC`
+      ORDER BY is_featured DESC, total_contributed DESC, created_at DESC`,
     );
 
     res.status(200).json(result.rows);

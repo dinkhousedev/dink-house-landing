@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Button } from "@heroui/button";
-import { Input } from "@heroui/input";
 
 import { Head } from "./head";
 
@@ -73,8 +72,6 @@ export default function DefaultLayout({
       <main className="flex-grow">{children}</main>
       <footer className="w-full bg-black text-white py-8">
         <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-
-
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="flex flex-col items-center md:items-start">
               <h3 className="font-display text-2xl uppercase mb-2">
@@ -95,9 +92,7 @@ export default function DefaultLayout({
           {/* Resubscribe Section */}
           <div className="border-t border-gray-800 mt-6 pt-6">
             <div className="text-center">
-              <p className="text-gray-400 text-sm mb-2">
-                Changed your mind?
-              </p>
+              <p className="text-gray-400 text-sm mb-2">Changed your mind?</p>
               <Button
                 className="bg-dink-lime text-black font-bold"
                 size="sm"
