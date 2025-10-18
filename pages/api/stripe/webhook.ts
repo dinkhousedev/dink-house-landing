@@ -2,18 +2,13 @@ import type { NextApiRequest, NextApiResponse } from "next";
 
 import { buffer } from "micro";
 import Stripe from "stripe";
-import { createClient } from "@supabase/supabase-js";
 
 import { logger } from "@/lib/logger";
+import { callFunction, query } from "@/lib/db";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
   apiVersion: "2025-09-30.clover",
 });
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || "",
-  process.env.SUPABASE_SERVICE_KEY || "",
-);
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || "";
 
@@ -329,128 +324,175 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   }
 
   try {
-    // Update contribution status using RPC (to access crowdfunding schema)
-    const { error: updateError } = await supabase.rpc("complete_contribution", {
+    // Update contribution status using PostgreSQL function
+    await callFunction("public.complete_contribution", {
       p_contribution_id: contributionId,
       p_payment_intent_id: session.payment_intent as string,
       p_checkout_session_id: session.id,
       p_payment_method: session.payment_method_types?.[0] || "card",
     });
 
-    if (updateError) {
-      logger.error("Error updating contribution:", updateError);
-      throw updateError;
-    }
-
     logger.info("Contribution updated successfully:", contributionId);
 
-    // Note: The complete_contribution RPC function automatically:
+    // Note: The complete_contribution function automatically:
     // 1. Allocates benefits from tier via database trigger
-    // 2. Queues thank you email via database trigger
-    // The trigger calls allocate_benefits_from_tier and send_contribution_thank_you_email
+    // 2. Updates campaign and tier totals
+    // 3. Updates founders wall
 
     // Send the thank you email immediately
     try {
-      const { data: emailResult, error: emailError } = await supabase.rpc(
-        "send_contribution_thank_you_email",
+      // Get contribution data for email
+      const contributionData = await query(
+        `
+        SELECT
+          c.id as contribution_id,
+          c.amount,
+          c.completed_at,
+          c.stripe_payment_intent_id,
+          c.payment_method,
+          b.id as backer_id,
+          b.email,
+          b.first_name,
+          b.last_initial,
+          b.city,
+          b.state,
+          t.id as tier_id,
+          t.name as tier_name,
+          t.benefits,
+          ct.name as campaign_name,
+          fw.display_name as founders_wall_name,
+          fw.location as founders_wall_location,
+          (c.is_public AND fw.id IS NOT NULL) as on_founders_wall
+        FROM public.contributions c
+        JOIN public.backers b ON c.backer_id = b.id
+        JOIN public.contribution_tiers t ON c.tier_id = t.id
+        JOIN public.campaign_types ct ON c.campaign_type_id = ct.id
+        LEFT JOIN public.founders_wall fw ON b.id = fw.backer_id
+        WHERE c.id = $1
+        `,
+        [contributionId],
+      );
+
+      if (contributionData.rows.length === 0) {
+        throw new Error(`Contribution ${contributionId} not found`);
+      }
+
+      const contrib = contributionData.rows[0];
+
+      // Get benefit allocations
+      const benefitsData = await query(
+        `
+        SELECT
+          benefit_type,
+          benefit_name,
+          quantity_allocated,
+          valid_until,
+          metadata
+        FROM public.benefit_allocations
+        WHERE contribution_id = $1 AND is_active = true
+        ORDER BY created_at
+        `,
+        [contributionId],
+      );
+
+      // Generate benefits HTML and text
+      let benefitsHtml = "";
+      let benefitsText = "";
+
+      for (const benefit of benefitsData.rows) {
+        const quantity = benefit.quantity_allocated
+          ? ` <span class="benefit-quantity">${benefit.quantity_allocated}</span>`
+          : "";
+        const validUntil = benefit.valid_until
+          ? ` (Valid until ${new Date(benefit.valid_until).toLocaleDateString()})`
+          : "";
+
+        benefitsHtml += `
+          <div class="benefit-item">
+            <div class="checkmark">✓</div>
+            <div class="benefit-content">
+              <div class="benefit-name">${benefit.benefit_name}${quantity}</div>
+              <div class="benefit-details">${validUntil}</div>
+            </div>
+          </div>
+        `;
+
+        benefitsText += `✓ ${benefit.benefit_name}${benefit.quantity_allocated ? ` (${benefit.quantity_allocated})` : ""}${validUntil}\n`;
+      }
+
+      // Prepare email data
+      const emailData: EmailData = {
+        first_name: contrib.first_name,
+        amount: contrib.amount,
+        tier_name: contrib.tier_name,
+        contribution_date: new Date(contrib.completed_at).toLocaleDateString(),
+        contribution_id: contrib.contribution_id,
+        payment_method: contrib.payment_method || "card",
+        stripe_charge_id: contrib.stripe_payment_intent_id || "",
+        benefits_html: benefitsHtml,
+        benefits_text: benefitsText,
+        on_founders_wall: contrib.on_founders_wall || false,
+        display_name: contrib.founders_wall_name || `${contrib.first_name} ${contrib.last_initial}.`,
+        founders_wall_message: contrib.on_founders_wall
+          ? "Thank you for your generous support!"
+          : "",
+        site_url: process.env.NEXT_PUBLIC_SITE_URL || "https://thedinkhouse.com",
+      };
+
+      // Send email via AWS Lambda function
+      const emailResponse = await fetch(
+        `${process.env.AWS_API_URL}/contact/send-brevo-email`,
         {
-          p_contribution_id: contributionId,
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            to: [{ email: contrib.email, name: `${contrib.first_name} ${contrib.last_initial}.` }],
+            subject: "Thank You for Your Contribution to The Dink House! 🎉",
+            htmlContent: generateContributionEmailHTML(emailData),
+            textContent: generateContributionEmailText(emailData),
+          }),
         },
       );
 
-      if (emailError) {
-        logger.error("Error queuing thank you email:", emailError);
-      } else if (emailResult?.success) {
-        logger.info(
-          "Thank you email queued successfully:",
-          emailResult.email_log_id,
+      if (!emailResponse.ok) {
+        const errorText = await emailResponse.text();
+
+        logger.error("Error sending email via Brevo:", errorText);
+
+        // Log failed email attempt
+        await query(
+          `INSERT INTO system.email_queue
+           (to_email, subject, html_body, text_body, status, error_message)
+           VALUES ($1, $2, $3, $4, 'failed', $5)`,
+          [
+            [contrib.email],
+            "Thank You for Your Contribution to The Dink House! 🎉",
+            generateContributionEmailHTML(emailData),
+            generateContributionEmailText(emailData),
+            errorText,
+          ],
         );
-        logger.debug("Email will be sent to:", emailResult.recipient);
-
-        // Send the email using Supabase Edge Function
-        const emailData = emailResult.email_data;
-
-        try {
-          const { data: sendResult, error: sendError } =
-            await supabase.functions.invoke("send-email-sendgrid", {
-              body: {
-                to: emailResult.recipient,
-                subject:
-                  "Thank You for Your Contribution to The Dink House! 🎉",
-                html: generateContributionEmailHTML(emailData),
-                text: generateContributionEmailText(emailData),
-              },
-            });
-
-          if (sendError) {
-            logger.error("Error sending email via SendGrid:", sendError);
-
-            // Update email log to failed
-            await supabase
-              .from("email_logs")
-              .update({
-                status: "failed",
-                error_message: sendError.message || "SendGrid function error",
-              })
-              .eq("id", emailResult.email_log_id);
-          } else {
-            logger.info("Email sent successfully via SendGrid:", sendResult);
-
-            // Update email log to sent
-            await supabase
-              .from("email_logs")
-              .update({
-                status: "sent",
-                sent_at: new Date().toISOString(),
-                provider_message_id: sendResult?.messageId || null,
-              })
-              .eq("id", emailResult.email_log_id);
-          }
-        } catch (sendErr) {
-          logger.error("Exception sending email:", sendErr);
-
-          // Update email log to failed
-          await supabase
-            .from("email_logs")
-            .update({
-              status: "failed",
-              error_message:
-                sendErr instanceof Error ? sendErr.message : "Unknown error",
-            })
-            .eq("id", emailResult.email_log_id);
-        }
       } else {
-        logger.error("Failed to queue thank you email:", emailResult?.error);
+        const emailResult = await emailResponse.json();
+
+        logger.info("Email sent successfully via Brevo:", emailResult);
+
+        // Log successful email
+        await query(
+          `INSERT INTO system.email_queue
+           (to_email, subject, html_body, text_body, status, sent_at, provider_message_id)
+           VALUES ($1, $2, $3, $4, 'sent', CURRENT_TIMESTAMP, $5)`,
+          [
+            [contrib.email],
+            "Thank You for Your Contribution to The Dink House! 🎉",
+            generateContributionEmailHTML(emailData),
+            generateContributionEmailText(emailData),
+            emailResult.messageId || null,
+          ],
+        );
       }
     } catch (emailErr) {
-      logger.error("Exception queuing thank you email:", emailErr);
-    }
-
-    // Check if this qualifies for court sponsorship ($1000+)
-    const { data: contribution } = await supabase
-      .from("contributions")
-      .select("amount")
-      .eq("id", contributionId)
-      .single();
-
-    if (contribution && contribution.amount >= 1000) {
-      const { data: backer } = await supabase
-        .from("backers")
-        .select("first_name, last_initial")
-        .eq("id", backerId)
-        .single();
-
-      if (backer) {
-        await supabase.from("court_sponsors").insert({
-          backer_id: backerId,
-          contribution_id: contributionId,
-          sponsor_name: `${backer.first_name} ${backer.last_initial}.`,
-          sponsor_type: "individual",
-          sponsorship_start: new Date().toISOString().split("T")[0],
-        });
-
-        logger.info("Created court sponsor entry");
-      }
+      logger.error("Exception sending thank you email:", emailErr);
     }
 
     logger.info("Checkout completed processing finished");
@@ -463,15 +505,15 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 async function handlePaymentSucceeded(paymentIntent: Stripe.PaymentIntent) {
   logger.info("Processing payment_intent.succeeded", paymentIntent.id);
 
-  const { error } = await supabase
-    .from("contributions")
-    .update({
-      status: "completed",
-      stripe_charge_id: paymentIntent.latest_charge as string,
-    })
-    .eq("stripe_payment_intent_id", paymentIntent.id);
-
-  if (error) {
+  try {
+    await query(
+      `UPDATE public.contributions
+       SET status = 'completed',
+           stripe_charge_id = $1
+       WHERE stripe_payment_intent_id = $2`,
+      [paymentIntent.latest_charge as string, paymentIntent.id],
+    );
+  } catch (error) {
     logger.error("Error updating contribution on payment success:", error);
   }
 }
@@ -479,14 +521,14 @@ async function handlePaymentSucceeded(paymentIntent: Stripe.PaymentIntent) {
 async function handlePaymentFailed(paymentIntent: Stripe.PaymentIntent) {
   logger.info("Processing payment_intent.payment_failed", paymentIntent.id);
 
-  const { error } = await supabase
-    .from("contributions")
-    .update({
-      status: "failed",
-    })
-    .eq("stripe_payment_intent_id", paymentIntent.id);
-
-  if (error) {
+  try {
+    await query(
+      `UPDATE public.contributions
+       SET status = 'failed'
+       WHERE stripe_payment_intent_id = $1`,
+      [paymentIntent.id],
+    );
+  } catch (error) {
     logger.error("Error updating contribution on payment failure:", error);
   }
 }
@@ -494,57 +536,40 @@ async function handlePaymentFailed(paymentIntent: Stripe.PaymentIntent) {
 async function handleChargeRefunded(charge: Stripe.Charge) {
   logger.info("Processing charge.refunded", charge.id);
 
-  // Find contribution
-  const { data: contribution, error: fetchError } = await supabase
-    .from("contributions")
-    .select("id")
-    .eq("stripe_charge_id", charge.id)
-    .single();
+  try {
+    // Find contribution
+    const contributionResult = await query(
+      `SELECT id FROM public.contributions WHERE stripe_charge_id = $1`,
+      [charge.id],
+    );
 
-  if (fetchError || !contribution) {
-    logger.error("Error finding contribution for refund:", fetchError);
+    if (contributionResult.rows.length === 0) {
+      logger.error("Error finding contribution for refund: not found");
 
-    return;
+      return;
+    }
+
+    const contributionId = contributionResult.rows[0].id;
+
+    // Update contribution status
+    await query(
+      `UPDATE public.contributions
+       SET status = 'refunded',
+           refunded_at = CURRENT_TIMESTAMP
+       WHERE id = $1`,
+      [contributionId],
+    );
+
+    // Deactivate benefits
+    await query(
+      `UPDATE public.benefit_allocations
+       SET is_active = false
+       WHERE contribution_id = $1`,
+      [contributionId],
+    );
+
+    logger.info("Refund processing completed");
+  } catch (error) {
+    logger.error("Error processing refund:", error);
   }
-
-  // Update contribution status
-  const { error: updateError } = await supabase
-    .from("contributions")
-    .update({
-      status: "refunded",
-      refunded_at: new Date().toISOString(),
-    })
-    .eq("id", contribution.id);
-
-  if (updateError) {
-    logger.error("Error updating contribution on refund:", updateError);
-
-    return;
-  }
-
-  // Deactivate benefits
-  const { error: benefitsError } = await supabase
-    .from("backer_benefits")
-    .update({
-      is_active: false,
-    })
-    .eq("contribution_id", contribution.id);
-
-  if (benefitsError) {
-    logger.error("Error deactivating benefits:", benefitsError);
-  }
-
-  // Deactivate court sponsor
-  const { error: sponsorError } = await supabase
-    .from("court_sponsors")
-    .update({
-      is_active: false,
-    })
-    .eq("contribution_id", contribution.id);
-
-  if (sponsorError) {
-    logger.error("Error deactivating court sponsor:", sponsorError);
-  }
-
-  logger.info("Refund processing completed");
 }
