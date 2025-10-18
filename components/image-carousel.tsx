@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { LazyMotion, domAnimation, m, AnimatePresence } from "framer-motion";
-import { Image } from "@heroui/react";
-import { Button } from "@heroui/react";
+import { Image } from "@heroui/image";
+import { Button } from "@heroui/button";
 
 interface ImageCarouselProps {
   images: Array<{ src: string; srcSet?: string; alt: string }>;
