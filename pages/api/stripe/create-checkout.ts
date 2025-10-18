@@ -3,6 +3,8 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import Stripe from "stripe";
 import { createClient } from "@supabase/supabase-js";
 
+import { logger } from "@/lib/logger";
+
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
   apiVersion: "2025-09-30.clover",
 });
@@ -66,9 +68,9 @@ export default async function handler(
     }
 
     // Log the tier ID being requested
-    console.log("=== CREATE CHECKOUT DEBUG ===");
-    console.log("Tier ID received:", tierId);
-    console.log("Tier ID type:", typeof tierId);
+    logger.debug("=== CREATE CHECKOUT DEBUG ===");
+    logger.debug("Tier ID received:", tierId);
+    logger.debug("Tier ID type:", typeof tierId);
 
     // Get tier details (using public view)
     const { data: tier, error: tierError } = await supabase
@@ -82,12 +84,12 @@ export default async function handler(
       .eq("id", tierId)
       .single();
 
-    console.log("Tier fetch result:", { tier, tierError });
+    logger.debug("Tier fetch result:", { tier, tierError });
 
     if (tierError || !tier) {
-      console.error("Tier fetch error:", JSON.stringify(tierError, null, 2));
-      console.error("Attempted tier ID:", tierId);
-      console.error("Full request body:", JSON.stringify(req.body, null, 2));
+      logger.error("Tier fetch error:", JSON.stringify(tierError, null, 2));
+      logger.error("Attempted tier ID:", tierId);
+      logger.error("Full request body:", JSON.stringify(req.body, null, 2));
 
       return res.status(404).json({
         success: false,
@@ -173,7 +175,7 @@ export default async function handler(
     );
 
     if (checkoutError || !checkoutData) {
-      console.error("Checkout creation error:", checkoutError);
+      logger.error("Checkout creation error:", checkoutError);
 
       return res.status(500).json({
         success: false,
@@ -230,7 +232,7 @@ export default async function handler(
       url: session.url || undefined,
     });
   } catch (error) {
-    console.error("Error creating checkout session:", error);
+    logger.error("Error creating checkout session:", error);
 
     return res.status(500).json({
       success: false,

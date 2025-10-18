@@ -2,6 +2,8 @@ import type { NextApiRequest, NextApiResponse } from "next";
 
 import { Pool } from "pg";
 
+import { logger } from "@/lib/logger";
+
 const pool = new Pool({
   host: process.env.DB_HOST,
   port: parseInt(process.env.DB_PORT || "5432"),
@@ -22,6 +24,8 @@ export default async function handler(
   }
 
   try {
+    logger.info("Fetching founders from database...");
+
     const result = await pool.query(
       `SELECT
         id,
@@ -37,12 +41,19 @@ export default async function handler(
       ORDER BY is_featured DESC, total_contributed DESC, created_at DESC`,
     );
 
+    logger.info(`Successfully fetched ${result.rows.length} founders`);
     res.status(200).json(result.rows);
   } catch (error: any) {
-    console.error("Error fetching founders:", error);
+    logger.error("Error fetching founders:", {
+      message: error.message,
+      code: error.code,
+      detail: error.detail,
+      hint: error.hint,
+    });
     res.status(500).json({
       error: "Failed to fetch founders",
       details: error.message,
+      code: error.code,
     });
   }
 }

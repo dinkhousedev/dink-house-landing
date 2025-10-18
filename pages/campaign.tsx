@@ -11,6 +11,7 @@ import { LazyMotion, domAnimation, m } from "framer-motion";
 import DefaultLayout from "@/layouts/default";
 import ContributionModal from "@/components/ContributionModal";
 import { getCampaignImageUrl } from "@/config/media-urls";
+import { logger } from "@/lib/logger";
 
 interface CampaignType {
   id: string;
@@ -94,7 +95,7 @@ export default function CampaignPage() {
 
   const fetchCampaignData = async () => {
     try {
-      console.log("Fetching campaigns from AWS RDS...");
+      logger.info("Fetching campaigns from AWS RDS...");
 
       // Fetch campaigns from Next.js API route (which calls AWS Lambda)
       const campaignsResponse = await fetch("/api/campaigns");
@@ -106,7 +107,7 @@ export default function CampaignPage() {
       }
       const campaignsData = await campaignsResponse.json();
 
-      console.log("Campaigns response:", campaignsData);
+      logger.debug("Campaigns response:", campaignsData);
 
       setCampaigns(campaignsData || []);
 
@@ -118,7 +119,7 @@ export default function CampaignPage() {
       }
       const tiersData = await tiersResponse.json();
 
-      console.log("Tiers response:", tiersData);
+      logger.debug("Tiers response:", tiersData);
 
       const tiersByCampaign: Record<string, ContributionTier[]> = {};
 
@@ -128,22 +129,22 @@ export default function CampaignPage() {
         }
         // Debug: Log first tier's benefits
         if (Object.keys(tiersByCampaign).length === 0) {
-          console.log("First tier benefits:", tier.benefits);
+          logger.debug("First tier benefits:", tier.benefits);
         }
         tiersByCampaign[tier.campaign_type_id].push(tier);
       });
 
       setTiers(tiersByCampaign);
-      console.log("Campaigns loaded:", campaignsData?.length);
-      console.log("Tiers loaded:", tiersData?.length);
-      console.log(
+      logger.debug("Campaigns loaded:", campaignsData?.length);
+      logger.debug("Tiers loaded:", tiersData?.length);
+      logger.debug(
         "First 3 tier IDs:",
         tiersData
           ?.slice(0, 3)
           .map((t: ContributionTier) => ({ id: t.id, name: t.name })),
       );
     } catch (error) {
-      console.error("Error fetching campaign data:", error);
+      logger.error("Error fetching campaign data:", error);
     } finally {
       setLoading(false);
     }
@@ -151,7 +152,7 @@ export default function CampaignPage() {
 
   const fetchFounders = async () => {
     try {
-      console.log("Fetching founders from AWS RDS...");
+      logger.info("Fetching founders from AWS RDS...");
 
       const response = await fetch("/api/founders");
 
@@ -160,11 +161,11 @@ export default function CampaignPage() {
       }
       const data = await response.json();
 
-      console.log("Founders response:", data);
+      logger.debug("Founders response:", data);
 
       setFounders(data || []);
     } catch (error) {
-      console.error("Error fetching founders:", error);
+      logger.error("Error fetching founders:", error);
     }
   };
 

@@ -18,7 +18,9 @@ export default function Document() {
               window.dataLayer = window.dataLayer || [];
               function gtag(){dataLayer.push(arguments);}
               gtag('js', new Date());
-              gtag('config', 'G-BYQ2H62BSK');
+              gtag('config', 'G-BYQ2H62BSK', {
+                'cookie_flags': 'SameSite=None;Secure'
+              });
             `,
           }}
         />

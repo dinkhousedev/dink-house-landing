@@ -2,6 +2,8 @@ import type { NextApiRequest, NextApiResponse } from "next";
 
 import { Pool } from "pg";
 
+import { logger } from "@/lib/logger";
+
 // Create PostgreSQL connection pool
 const pool = new Pool({
   host: process.env.DB_HOST,
@@ -23,6 +25,11 @@ export default async function handler(
   }
 
   try {
+    logger.info("Fetching campaigns from database...", {
+      host: process.env.DB_HOST ? "***configured***" : "MISSING",
+      database: process.env.DB_NAME || "dink_house",
+    });
+
     const result = await pool.query(
       `SELECT
         id,
@@ -41,12 +48,19 @@ export default async function handler(
       ORDER BY display_order ASC`,
     );
 
+    logger.info(`Successfully fetched ${result.rows.length} campaigns`);
     res.status(200).json(result.rows);
   } catch (error: any) {
-    console.error("Error fetching campaigns:", error);
+    logger.error("Error fetching campaigns:", {
+      message: error.message,
+      code: error.code,
+      detail: error.detail,
+      hint: error.hint,
+    });
     res.status(500).json({
       error: "Failed to fetch campaigns",
       details: error.message,
+      code: error.code,
     });
   }
 }

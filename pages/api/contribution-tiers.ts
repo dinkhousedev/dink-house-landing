@@ -2,6 +2,8 @@ import type { NextApiRequest, NextApiResponse } from "next";
 
 import { Pool } from "pg";
 
+import { logger } from "@/lib/logger";
+
 const pool = new Pool({
   host: process.env.DB_HOST,
   port: parseInt(process.env.DB_PORT || "5432"),
@@ -23,6 +25,10 @@ export default async function handler(
 
   try {
     const campaignId = req.query.campaign_id as string | undefined;
+
+    logger.info("Fetching contribution tiers...", {
+      campaignId: campaignId || "all",
+    });
 
     let sql = `
       SELECT
@@ -54,12 +60,21 @@ export default async function handler(
 
     const result = await pool.query(sql, params);
 
+    logger.info(
+      `Successfully fetched ${result.rows.length} contribution tiers`,
+    );
     res.status(200).json(result.rows);
   } catch (error: any) {
-    console.error("Error fetching contribution tiers:", error);
+    logger.error("Error fetching contribution tiers:", {
+      message: error.message,
+      code: error.code,
+      detail: error.detail,
+      hint: error.hint,
+    });
     res.status(500).json({
       error: "Failed to fetch contribution tiers",
       details: error.message,
+      code: error.code,
     });
   }
 }

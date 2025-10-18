@@ -1,5 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 
+import { logger } from "@/lib/logger";
+
 // Configuration
 const AWS_API_URL =
   process.env.NEXT_PUBLIC_AWS_API_URL || process.env.AWS_API_URL || "";
@@ -136,7 +138,7 @@ export default async function handler(
 
     // Check if AWS API URL is configured
     if (!AWS_API_URL) {
-      console.error("AWS_API_URL is not configured");
+      logger.error("AWS_API_URL is not configured");
 
       return res.status(500).json({
         success: false,
@@ -148,7 +150,7 @@ export default async function handler(
     // Call the Lambda function endpoint
     const lambdaUrl = `${AWS_API_URL}/contact/submit`;
 
-    console.log("Calling Lambda endpoint:", lambdaUrl);
+    logger.info("Calling Lambda endpoint:", lambdaUrl);
 
     const response = await fetch(lambdaUrl, {
       method: "POST",
@@ -161,7 +163,7 @@ export default async function handler(
     const result = await response.json();
 
     if (!response.ok) {
-      console.error("Lambda API error:", {
+      logger.error("Lambda API error:", {
         status: response.status,
         result,
       });
@@ -173,7 +175,7 @@ export default async function handler(
     }
 
     // Log successful submission
-    console.log("Contact form submitted successfully:", {
+    logger.info("Contact form submitted successfully:", {
       timestamp: new Date().toISOString(),
       email,
       inquiryId: result.inquiry_id,
@@ -190,7 +192,7 @@ export default async function handler(
       confirmationSent: true,
     });
   } catch (error) {
-    console.error("Contact form submission error:", error);
+    logger.error("Contact form submission error:", error);
 
     return res.status(500).json({
       success: false,

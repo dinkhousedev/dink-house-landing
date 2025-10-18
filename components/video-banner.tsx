@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 
 import { MEDIA_URLS } from "@/config/media-urls";
+import { logger } from "@/lib/logger";
 
 const VIDEO_URLS = MEDIA_URLS.videos;
 const LOGO_URL = MEDIA_URLS.logo;
@@ -38,7 +39,7 @@ export default function VideoBanner() {
 
     const handleCanPlay = () => {
       video.play().catch((error) => {
-        console.warn("Video autoplay failed:", error);
+        logger.warn("Video autoplay failed:", error);
       });
     };
 
@@ -60,7 +61,7 @@ export default function VideoBanner() {
       // Attempt to play after a short delay to ensure load completes
       setTimeout(() => {
         video.play().catch((error) => {
-          console.warn("Video autoplay failed:", error);
+          logger.warn("Video autoplay failed:", error);
         });
       }, 100);
     }
