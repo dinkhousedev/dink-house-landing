@@ -95,6 +95,9 @@ export default function ContributionModal({
       // Create checkout session - use AWS API
       const awsApiUrl = process.env.NEXT_PUBLIC_AWS_API_URL || "";
 
+      // Get base URL for redirects
+      const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
+
       // AWS Lambda expects flat structure
       const requestBody = {
         email: formData.email.trim().toLowerCase(),
@@ -108,6 +111,8 @@ export default function ContributionModal({
         state: formData.state.trim().toUpperCase() || undefined,
         isPublic: formData.isPublic,
         showAmount: formData.showAmount,
+        successUrl: `${baseUrl}/campaign?success=true&session_id={CHECKOUT_SESSION_ID}`,
+        cancelUrl: `${baseUrl}/campaign?canceled=true`,
       };
 
       const endpoint = awsApiUrl
