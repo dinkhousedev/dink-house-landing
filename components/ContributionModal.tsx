@@ -92,45 +92,26 @@ export default function ContributionModal({
         }
       }
 
-      // Create checkout session
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
+      // Create checkout session - use AWS API
+      const awsApiUrl = process.env.NEXT_PUBLIC_AWS_API_URL || "";
 
-      // Use different payload structure for Express API vs Next.js API
-      const requestBody = apiUrl
-        ? {
-            // Express API structure (nested)
-            backer: {
-              email: formData.email.trim().toLowerCase(),
-              firstName: formData.firstName.trim(),
-              lastInitial: formData.lastInitial.trim().toUpperCase(),
-              phone: formData.phone.trim() || undefined,
-              city: formData.city.trim() || undefined,
-              state: formData.state.trim().toUpperCase() || undefined,
-            },
-            contribution: {
-              campaignId: tier.campaign_type_id,
-              tierId: tier.id,
-              amount: amountValue || tier.amount,
-              isPublic: formData.isPublic,
-              showAmount: formData.showAmount,
-            },
-          }
-        : {
-            // Next.js API structure (flat)
-            tierId: tier.id,
-            firstName: formData.firstName.trim(),
-            lastInitial: formData.lastInitial.trim().toUpperCase(),
-            email: formData.email.trim().toLowerCase(),
-            phone: formData.phone.trim(),
-            city: formData.city.trim(),
-            state: formData.state.trim().toUpperCase(),
-            isPublic: formData.isPublic,
-            showAmount: formData.showAmount,
-            customAmount: amountValue,
-          };
+      // AWS Lambda expects flat structure
+      const requestBody = {
+        email: formData.email.trim().toLowerCase(),
+        firstName: formData.firstName.trim(),
+        lastInitial: formData.lastInitial.trim().toUpperCase(),
+        campaignTypeId: tier.campaign_type_id,
+        tierId: tier.id,
+        amount: amountValue || tier.amount,
+        phone: formData.phone.trim() || undefined,
+        city: formData.city.trim() || undefined,
+        state: formData.state.trim().toUpperCase() || undefined,
+        isPublic: formData.isPublic,
+        showAmount: formData.showAmount,
+      };
 
-      const endpoint = apiUrl
-        ? `${apiUrl}/api/crowdfunding/create-checkout-session`
+      const endpoint = awsApiUrl
+        ? `${awsApiUrl}/campaigns/checkout`
         : "/api/stripe/create-checkout";
 
       console.log("Calling API endpoint:", endpoint);
@@ -149,13 +130,12 @@ export default function ContributionModal({
       console.log("API response:", { status: response.status, data });
 
       if (!response.ok) {
-        throw new Error(data.error || "Failed to create checkout session");
+        throw new Error(data.message || data.error || "Failed to create checkout session");
       }
 
       // Redirect to Stripe Checkout
-      // Express API returns { success, data: { url } }
-      // Next.js API returns { success, url }
-      const checkoutUrl = data.data?.url || data.url;
+      // AWS Lambda returns { sessionUrl, sessionId, contributionId, backerId }
+      const checkoutUrl = data.sessionUrl || data.url;
 
       if (checkoutUrl) {
         window.location.href = checkoutUrl;
@@ -250,7 +230,6 @@ export default function ContributionModal({
                     input: "bg-gray-800 text-white text-lg",
                     inputWrapper: "bg-gray-800 border-gray-700",
                   }}
-                  id={amountInputId}
                   min={minAmount}
                   placeholder={`Minimum $${minAmount}`}
                   startContent={
