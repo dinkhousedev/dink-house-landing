@@ -1,7 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
+
 import ImageCarousel from "./image-carousel";
+
 import { CAROUSEL_IMAGES } from "@/config/carousel-images";
 import { getCourtImageUrl } from "@/config/media-urls";
 
@@ -18,7 +20,9 @@ export const SupabaseImageCarousel = ({
   showIndicators = true,
   className = "",
 }: SupabaseImageCarouselProps) => {
-  const [images, setImages] = useState<Array<{ src: string; srcSet?: string; alt: string }>>([]);
+  const [images, setImages] = useState<
+    Array<{ src: string; srcSet?: string; alt: string }>
+  >([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -42,11 +46,11 @@ export const SupabaseImageCarousel = ({
 
   return (
     <ImageCarousel
-      images={images}
       autoplayInterval={autoplayInterval}
+      className={className}
+      images={images}
       showControls={showControls}
       showIndicators={showIndicators}
-      className={className}
     />
   );
 };
