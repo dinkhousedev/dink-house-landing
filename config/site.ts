@@ -43,17 +43,17 @@ export const siteConfig = {
     },
   ],
   navMenuItems: [
-    // {
-    //   label: "Build the Courts",
-    //   href: "/campaign",
-    // },
     {
-      label: "Contact Us",
-      href: "/contact",
+      label: "Campaign",
+      href: "/campaign",
     },
     {
       label: "FAQs",
       href: "/#faqs",
+    },
+    {
+      label: "Contact Us",
+      href: "/contact",
     },
   ],
   links: {
