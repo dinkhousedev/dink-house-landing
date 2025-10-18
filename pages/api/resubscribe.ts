@@ -118,7 +118,8 @@ export default async function handler(
     console.error("Error processing resubscribe request:", error);
 
     // Provide more helpful error message
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
 
     return res.status(500).json({
       success: false,

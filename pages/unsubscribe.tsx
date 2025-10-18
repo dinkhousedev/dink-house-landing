@@ -1,13 +1,13 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-
 import { useRouter } from "next/router";
 
 import DefaultLayout from "@/layouts/default";
 
 const API_URL =
-  process.env.NEXT_PUBLIC_SUPABASE_URL || "https://wchxzbuuwssrnaxshseu.supabase.co";
+  process.env.NEXT_PUBLIC_SUPABASE_URL ||
+  "https://wchxzbuuwssrnaxshseu.supabase.co";
 const ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
 
 export default function Unsubscribe() {
@@ -96,9 +96,7 @@ export default function Unsubscribe() {
                 <ul className="space-y-2 text-gray-300">
                   <li>🎯 Exclusive pickleball tips from pros</li>
                   <li>🏆 Early access to tournaments and events</li>
-                  <li>
-                    💚 First dibs on court bookings when we open in 2026
-                  </li>
+                  <li>💚 First dibs on court bookings when we open in 2026</li>
                   <li>📰 Community news and updates</li>
                 </ul>
               </div>

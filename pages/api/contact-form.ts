@@ -1,7 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 
 // Configuration
-const AWS_API_URL = process.env.NEXT_PUBLIC_AWS_API_URL || process.env.AWS_API_URL || "";
+const AWS_API_URL =
+  process.env.NEXT_PUBLIC_AWS_API_URL || process.env.AWS_API_URL || "";
 
 // Rate limiting configuration
 const RATE_LIMIT_PER_MINUTE = parseInt(
@@ -76,7 +77,7 @@ export default async function handler(
   if (req.method !== "POST") {
     return res.status(405).json({
       success: false,
-      error: "Method not allowed"
+      error: "Method not allowed",
     });
   }
 
@@ -136,9 +137,11 @@ export default async function handler(
     // Check if AWS API URL is configured
     if (!AWS_API_URL) {
       console.error("AWS_API_URL is not configured");
+
       return res.status(500).json({
         success: false,
-        message: "Email service is not configured. Please contact the administrator.",
+        message:
+          "Email service is not configured. Please contact the administrator.",
       });
     }
 
@@ -179,12 +182,13 @@ export default async function handler(
     // Return success response
     return res.status(200).json({
       success: true,
-      message: result.message || "Thank you for your message! We will get back to you within 24 hours.",
+      message:
+        result.message ||
+        "Thank you for your message! We will get back to you within 24 hours.",
       inquiry_id: result.inquiry_id,
       emailSent: result.emailSent,
       confirmationSent: true,
     });
-
   } catch (error) {
     console.error("Contact form submission error:", error);
 

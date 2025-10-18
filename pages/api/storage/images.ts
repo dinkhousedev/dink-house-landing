@@ -25,10 +25,12 @@ interface ImageResponse {
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<ImageResponse>
+  res: NextApiResponse<ImageResponse>,
 ) {
   if (req.method !== "GET") {
-    return res.status(405).json({ success: false, error: "Method not allowed" });
+    return res
+      .status(405)
+      .json({ success: false, error: "Method not allowed" });
   }
 
   try {
@@ -59,7 +61,9 @@ export default async function handler(
 
     if (!response.ok) {
       const errorText = await response.text();
+
       console.error("Supabase storage error:", errorText);
+
       return res.status(response.status).json({
         success: false,
         error: `Failed to fetch from Supabase: ${errorText}`,
@@ -92,6 +96,7 @@ export default async function handler(
     });
   } catch (error) {
     console.error("Error fetching images:", error);
+
     return res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : "Unknown error",

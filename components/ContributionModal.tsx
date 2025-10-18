@@ -61,7 +61,11 @@ export default function ContributionModal({
     setError("");
 
     console.log("=== CONTRIBUTION SUBMIT ===");
-    console.log("Tier being submitted:", { id: tier.id, name: tier.name, campaign_type_id: tier.campaign_type_id });
+    console.log("Tier being submitted:", {
+      id: tier.id,
+      name: tier.name,
+      campaign_type_id: tier.campaign_type_id,
+    });
 
     try {
       // Validate form
@@ -77,50 +81,36 @@ export default function ContributionModal({
 
       // Validate custom amount if applicable
       let amountValue: number | undefined;
+
       if (allowsCustomAmount && customAmount) {
         amountValue = parseFloat(customAmount);
         if (isNaN(amountValue) || amountValue < minAmount) {
-          throw new Error(`Please enter a valid amount (minimum $${minAmount})`);
+          throw new Error(
+            `Please enter a valid amount (minimum $${minAmount})`,
+          );
         }
       }
 
-      // Create checkout session
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "";
+      // Create checkout session - use AWS API
+      const awsApiUrl = process.env.NEXT_PUBLIC_AWS_API_URL || "";
 
-      // Use different payload structure for Express API vs Next.js API
-      const requestBody = apiUrl ? {
-        // Express API structure (nested)
-        backer: {
-          email: formData.email.trim().toLowerCase(),
-          firstName: formData.firstName.trim(),
-          lastInitial: formData.lastInitial.trim().toUpperCase(),
-          phone: formData.phone.trim() || undefined,
-          city: formData.city.trim() || undefined,
-          state: formData.state.trim().toUpperCase() || undefined,
-        },
-        contribution: {
-          campaignId: tier.campaign_type_id,
-          tierId: tier.id,
-          amount: amountValue || tier.amount,
-          isPublic: formData.isPublic,
-          showAmount: formData.showAmount,
-        }
-      } : {
-        // Next.js API structure (flat)
-        tierId: tier.id,
+      // AWS Lambda expects flat structure
+      const requestBody = {
+        email: formData.email.trim().toLowerCase(),
         firstName: formData.firstName.trim(),
         lastInitial: formData.lastInitial.trim().toUpperCase(),
-        email: formData.email.trim().toLowerCase(),
-        phone: formData.phone.trim(),
-        city: formData.city.trim(),
-        state: formData.state.trim().toUpperCase(),
+        campaignTypeId: tier.campaign_type_id,
+        tierId: tier.id,
+        amount: amountValue || tier.amount,
+        phone: formData.phone.trim() || undefined,
+        city: formData.city.trim() || undefined,
+        state: formData.state.trim().toUpperCase() || undefined,
         isPublic: formData.isPublic,
         showAmount: formData.showAmount,
-        customAmount: amountValue,
       };
 
-      const endpoint = apiUrl
-        ? `${apiUrl}/api/crowdfunding/create-checkout-session`
+      const endpoint = awsApiUrl
+        ? `${awsApiUrl}/campaigns/checkout`
         : "/api/stripe/create-checkout";
 
       console.log("Calling API endpoint:", endpoint);
@@ -135,16 +125,16 @@ export default function ContributionModal({
       });
 
       const data = await response.json();
+
       console.log("API response:", { status: response.status, data });
 
       if (!response.ok) {
-        throw new Error(data.error || "Failed to create checkout session");
+        throw new Error(data.message || data.error || "Failed to create checkout session");
       }
 
       // Redirect to Stripe Checkout
-      // Express API returns { success, data: { url } }
-      // Next.js API returns { success, url }
-      const checkoutUrl = data.data?.url || data.url;
+      // AWS Lambda returns { sessionUrl, sessionId, contributionId, backerId }
+      const checkoutUrl = data.sessionUrl || data.url;
 
       if (checkoutUrl) {
         window.location.href = checkoutUrl;
@@ -169,10 +159,6 @@ export default function ContributionModal({
 
   return (
     <Modal
-      isOpen={isOpen}
-      onClose={onClose}
-      size="2xl"
-      scrollBehavior="inside"
       backdrop="blur"
       classNames={{
         base: "bg-gray-900 border-2 border-gray-800",
@@ -180,36 +166,50 @@ export default function ContributionModal({
         body: "py-6",
         footer: "border-t border-gray-800",
       }}
+      isOpen={isOpen}
+      scrollBehavior="inside"
+      size="2xl"
+      onClose={onClose}
     >
       <ModalContent>
         <form onSubmit={handleSubmit}>
           <ModalHeader className="flex flex-col gap-1">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-bold text-white">{tier.name}</h2>
-              <Chip size="lg" variant="flat" className="bg-dink-lime/20 text-dink-lime font-bold">
+              <Chip
+                className="bg-dink-lime/20 text-dink-lime font-bold"
+                size="lg"
+                variant="flat"
+              >
                 {allowsCustomAmount && customAmount
                   ? formatCurrency(parseFloat(customAmount))
                   : allowsCustomAmount
-                  ? "Custom"
-                  : formatCurrency(tier.amount)}
+                    ? "Custom"
+                    : formatCurrency(tier.amount)}
               </Chip>
             </div>
-            <p className="text-sm text-gray-400 font-normal">{tier.description}</p>
+            <p className="text-sm text-gray-400 font-normal">
+              {tier.description}
+            </p>
           </ModalHeader>
 
           <ModalBody>
             {/* Benefits */}
             <div className="mb-6">
-              <h3 className="text-sm font-semibold text-gray-300 mb-3">Your Benefits Include:</h3>
+              <h3 className="text-sm font-semibold text-gray-300 mb-3">
+                Your Benefits Include:
+              </h3>
               <div className="space-y-2">
                 {tier.benefits?.map((benefit, idx) => (
                   <div key={idx} className="flex items-start gap-2">
                     <Icon
-                      icon="solar:check-circle-bold"
                       className="text-dink-lime flex-shrink-0 mt-0.5"
+                      icon="solar:check-circle-bold"
                       width={20}
                     />
-                    <span className="text-sm text-gray-400">{benefit.text}</span>
+                    <span className="text-sm text-gray-400">
+                      {benefit.text}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -222,24 +222,25 @@ export default function ContributionModal({
                   Choose Your Contribution Amount
                 </label>
                 <Input
-                  type="number"
-                  placeholder={`Minimum $${minAmount}`}
-                  value={customAmount}
-                  onChange={(e) => setCustomAmount(e.target.value)}
+                  classNames={{
+                    input: "bg-gray-800 text-white text-lg",
+                    inputWrapper: "bg-gray-800 border-gray-700",
+                  }}
                   min={minAmount}
-                  step="0.01"
+                  placeholder={`Minimum $${minAmount}`}
                   startContent={
                     <div className="pointer-events-none flex items-center">
                       <span className="text-gray-400 text-sm">$</span>
                     </div>
                   }
-                  classNames={{
-                    input: "bg-gray-800 text-white text-lg",
-                    inputWrapper: "bg-gray-800 border-gray-700",
-                  }}
+                  step="0.01"
+                  type="number"
+                  value={customAmount}
+                  onChange={(e) => setCustomAmount(e.target.value)}
                 />
                 <p className="text-xs text-gray-500 mt-2">
-                  Enter any amount ${minAmount} or more. Every dollar helps equip our community.
+                  Enter any amount ${minAmount} or more. Every dollar helps
+                  equip our community.
                 </p>
               </div>
             )}
@@ -248,101 +249,121 @@ export default function ContributionModal({
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <Input
+                  isRequired
+                  classNames={{
+                    input: "bg-gray-800 text-white",
+                    inputWrapper: "bg-gray-800 border-gray-700",
+                  }}
                   label="First Name"
                   placeholder="John"
                   value={formData.firstName}
-                  onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                  isRequired
-                  classNames={{
-                    input: "bg-gray-800 text-white",
-                    inputWrapper: "bg-gray-800 border-gray-700",
-                  }}
+                  onChange={(e) =>
+                    setFormData({ ...formData, firstName: e.target.value })
+                  }
                 />
                 <Input
-                  label="Last Initial"
-                  placeholder="S"
-                  maxLength={1}
-                  value={formData.lastInitial}
-                  onChange={(e) =>
-                    setFormData({ ...formData, lastInitial: e.target.value.toUpperCase() })
-                  }
                   isRequired
                   classNames={{
                     input: "bg-gray-800 text-white",
                     inputWrapper: "bg-gray-800 border-gray-700",
                   }}
+                  label="Last Initial"
+                  maxLength={1}
+                  placeholder="S"
+                  value={formData.lastInitial}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      lastInitial: e.target.value.toUpperCase(),
+                    })
+                  }
                 />
               </div>
 
               <Input
-                label="Email"
-                type="email"
-                placeholder="john@example.com"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                 isRequired
                 classNames={{
                   input: "bg-gray-800 text-white",
                   inputWrapper: "bg-gray-800 border-gray-700",
                 }}
+                label="Email"
+                placeholder="john@example.com"
+                type="email"
+                value={formData.email}
+                onChange={(e) =>
+                  setFormData({ ...formData, email: e.target.value })
+                }
               />
 
               <Input
-                label="Phone (Optional)"
-                type="tel"
-                placeholder="(555) 123-4567"
-                value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 classNames={{
                   input: "bg-gray-800 text-white",
                   inputWrapper: "bg-gray-800 border-gray-700",
                 }}
+                label="Phone (Optional)"
+                placeholder="(555) 123-4567"
+                type="tel"
+                value={formData.phone}
+                onChange={(e) =>
+                  setFormData({ ...formData, phone: e.target.value })
+                }
               />
 
               <div className="grid grid-cols-3 gap-4">
                 <Input
-                  label="City (Optional)"
-                  placeholder="Belton"
-                  value={formData.city}
-                  onChange={(e) => setFormData({ ...formData, city: e.target.value })}
                   className="col-span-2"
                   classNames={{
                     input: "bg-gray-800 text-white",
                     inputWrapper: "bg-gray-800 border-gray-700",
                   }}
+                  label="City (Optional)"
+                  placeholder="Belton"
+                  value={formData.city}
+                  onChange={(e) =>
+                    setFormData({ ...formData, city: e.target.value })
+                  }
                 />
                 <Input
-                  label="State"
-                  placeholder="TX"
-                  maxLength={2}
-                  value={formData.state}
-                  onChange={(e) => setFormData({ ...formData, state: e.target.value.toUpperCase() })}
                   classNames={{
                     input: "bg-gray-800 text-white",
                     inputWrapper: "bg-gray-800 border-gray-700",
                   }}
+                  label="State"
+                  maxLength={2}
+                  placeholder="TX"
+                  value={formData.state}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      state: e.target.value.toUpperCase(),
+                    })
+                  }
                 />
               </div>
 
               {/* Privacy Options */}
               <div className="space-y-3 pt-4 border-t border-gray-800">
                 <Checkbox
-                  isSelected={formData.isPublic}
-                  onValueChange={(value) => setFormData({ ...formData, isPublic: value })}
                   classNames={{
                     wrapper: "after:bg-dink-lime after:text-black",
                   }}
+                  isSelected={formData.isPublic}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, isPublic: value })
+                  }
                 >
                   <span className="text-sm text-gray-300">
                     Show my name on the Founders Wall
                   </span>
                 </Checkbox>
                 <Checkbox
-                  isSelected={formData.showAmount}
-                  onValueChange={(value) => setFormData({ ...formData, showAmount: value })}
                   classNames={{
                     wrapper: "after:bg-dink-lime after:text-black",
                   }}
+                  isSelected={formData.showAmount}
+                  onValueChange={(value) =>
+                    setFormData({ ...formData, showAmount: value })
+                  }
                 >
                   <span className="text-sm text-gray-300">
                     Display my contribution amount publicly
@@ -353,17 +374,25 @@ export default function ContributionModal({
               {/* Error Message */}
               {error && (
                 <div className="flex items-center gap-2 p-3 bg-red-500/10 border border-red-500/50 rounded-lg">
-                  <Icon icon="solar:danger-circle-bold" className="text-red-500" width={20} />
+                  <Icon
+                    className="text-red-500"
+                    icon="solar:danger-circle-bold"
+                    width={20}
+                  />
                   <span className="text-sm text-red-400">{error}</span>
                 </div>
               )}
 
               {/* Security Notice */}
               <div className="flex items-start gap-2 p-3 bg-gray-800 rounded-lg">
-                <Icon icon="solar:shield-check-bold" className="text-dink-lime flex-shrink-0 mt-0.5" width={20} />
+                <Icon
+                  className="text-dink-lime flex-shrink-0 mt-0.5"
+                  icon="solar:shield-check-bold"
+                  width={20}
+                />
                 <p className="text-xs text-gray-400">
-                  Your payment information is securely processed by Stripe. We never see or store
-                  your payment details.
+                  Your payment information is securely processed by Stripe. We
+                  never see or store your payment details.
                 </p>
               </div>
             </div>
@@ -372,19 +401,19 @@ export default function ContributionModal({
           <ModalFooter>
             <Button
               color="default"
+              disabled={loading}
               variant="flat"
               onPress={onClose}
-              disabled={loading}
             >
               Cancel
             </Button>
             <Button
-              type="submit"
               className="bg-dink-lime text-black font-bold"
               isLoading={loading}
               startContent={
                 !loading && <Icon icon="solar:card-bold" width={20} />
               }
+              type="submit"
             >
               {loading ? "Processing..." : `Continue to Payment`}
             </Button>

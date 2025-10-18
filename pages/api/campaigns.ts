@@ -1,4 +1,5 @@
 import type { NextApiRequest, NextApiResponse } from "next";
+
 import { Pool } from "pg";
 
 // Create PostgreSQL connection pool
@@ -15,7 +16,7 @@ const pool = new Pool({
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse
+  res: NextApiResponse,
 ) {
   if (req.method !== "GET") {
     return res.status(405).json({ error: "Method not allowed" });
@@ -37,7 +38,7 @@ export default async function handler(
         updated_at
       FROM public.campaign_types
       WHERE is_active = true
-      ORDER BY display_order ASC`
+      ORDER BY display_order ASC`,
     );
 
     res.status(200).json(result.rows);
