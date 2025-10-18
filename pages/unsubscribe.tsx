@@ -91,7 +91,7 @@ export default function Unsubscribe() {
 
               <div className="bg-[#1A1A1A] border-l-4 border-[#B3FF00] p-6 rounded-lg text-left mb-8">
                 <h2 className="text-xl font-bold text-[#B3FF00] mb-3 uppercase">
-                  You'll Miss Out On:
+                  You&apos;ll Miss Out On:
                 </h2>
                 <ul className="space-y-2 text-gray-300">
                   <li>🎯 Exclusive pickleball tips from pros</li>
@@ -171,7 +171,7 @@ export default function Unsubscribe() {
                 </h2>
                 <p className="text-gray-400 mb-4">
                   You can resubscribe anytime by entering your email on our
-                  homepage. We'd love to have you back in the community!
+                  homepage. We&apos;d love to have you back in the community!
                 </p>
               </div>
 
@@ -208,7 +208,7 @@ export default function Unsubscribe() {
                 </h2>
                 <ul className="space-y-2 text-gray-300">
                   <li>🔄 Try the unsubscribe link again from your email</li>
-                  <li>📧 Check if you're already unsubscribed</li>
+                  <li>📧 Check if you&apos;re already unsubscribed</li>
                   <li>💬 Contact us directly for help</li>
                 </ul>
               </div>

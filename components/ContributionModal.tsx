@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useId, useState } from "react";
 import {
   Modal,
   ModalContent,
@@ -51,6 +51,7 @@ export default function ContributionModal({
   const [customAmount, setCustomAmount] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const amountInputId = useId();
 
   const allowsCustomAmount = tier.metadata?.allows_custom_amount === true;
   const minAmount = tier.metadata?.min_amount || 5;
@@ -218,7 +219,10 @@ export default function ContributionModal({
             {/* Custom Amount Input */}
             {allowsCustomAmount && (
               <div className="mb-6 p-4 bg-dink-lime/5 border-2 border-dink-lime/30 rounded-lg">
-                <label className="block text-sm font-semibold text-gray-300 mb-3">
+                <label
+                  className="block text-sm font-semibold text-gray-300 mb-3"
+                  htmlFor={amountInputId}
+                >
                   Choose Your Contribution Amount
                 </label>
                 <Input
