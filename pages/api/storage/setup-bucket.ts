@@ -1,5 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 
+import { logger } from "@/lib/logger";
+
 interface SetupResponse {
   success: boolean;
   message: string;
@@ -64,7 +66,7 @@ export default async function handler(
         "Bucket 'dink-files' created successfully. Now upload your images to images_landing folder via Supabase Dashboard.",
     });
   } catch (error) {
-    console.error("Error setting up bucket:", error);
+    logger.error("Error setting up bucket:", error);
 
     return res.status(500).json({
       success: false,

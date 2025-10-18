@@ -1,5 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 
+import { logger } from "@/lib/logger";
+
 type ContactData = {
   firstName: string;
   lastName: string;
@@ -75,7 +77,7 @@ export default async function handler(
 
     // Check if AWS API URL is configured
     if (!AWS_API_URL) {
-      console.error("AWS_API_URL is not configured");
+      logger.error("AWS_API_URL is not configured");
 
       return res.status(500).json({
         success: false,
@@ -88,7 +90,7 @@ export default async function handler(
     // Call the Lambda function endpoint
     const lambdaUrl = `${AWS_API_URL}/newsletter/subscribe`;
 
-    console.log("Calling Lambda endpoint:", lambdaUrl);
+    logger.info("Calling Lambda endpoint:", lambdaUrl);
 
     const response = await fetch(lambdaUrl, {
       method: "POST",
@@ -101,10 +103,10 @@ export default async function handler(
     const result = await response.json();
 
     // Log the actual response for debugging
-    console.log("Lambda API Response:", JSON.stringify(result, null, 2));
+    logger.info("Lambda API Response:", JSON.stringify(result, null, 2));
 
     if (!response.ok) {
-      console.error(
+      logger.error(
         "Lambda API returned non-OK status:",
         response.status,
         result,
@@ -129,7 +131,7 @@ export default async function handler(
       });
     }
 
-    console.log("Newsletter subscription saved:", result.subscriber_id);
+    logger.info("Newsletter subscription saved:", result.subscriber_id);
 
     return res.status(200).json({
       success: true,
@@ -139,7 +141,7 @@ export default async function handler(
       data: contactData,
     });
   } catch (error) {
-    console.error("Error processing newsletter subscription:", error);
+    logger.error("Error processing newsletter subscription:", error);
 
     // Provide more helpful error message
     const errorMessage =

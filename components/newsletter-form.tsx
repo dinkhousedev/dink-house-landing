@@ -46,7 +46,7 @@ export default function NewsletterForm() {
           setAcceptNotifications(false);
         }
       }
-    } catch (error) {
+    } catch {
       setMessage({
         type: "error",
         text: "Something went wrong. Please try again later.",
