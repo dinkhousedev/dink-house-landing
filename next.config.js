@@ -38,6 +38,15 @@ const nextConfig = {
       },
     ],
   },
+  // Production optimizations - automatically strips console.log in production builds
+  compiler: {
+    // Remove console.log in production (keeps console.error and console.warn)
+    removeConsole: process.env.NODE_ENV === 'production' ? {
+      exclude: ['error', 'warn'],
+    } : false,
+  },
+  swcMinify: true,
+  poweredByHeader: false,
 }
 
 module.exports = nextConfig
