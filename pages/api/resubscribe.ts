@@ -1,5 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 
+import { logger } from "@/lib/logger";
+
 type ResubscribeData = {
   email: string;
 };
@@ -71,10 +73,10 @@ export default async function handler(
     const result = await response.json();
 
     // Log the actual response for debugging
-    console.log("Resubscribe API Response:", JSON.stringify(result, null, 2));
+    logger.info("Resubscribe API Response:", JSON.stringify(result, null, 2));
 
     if (!response.ok) {
-      console.error("API returned non-OK status:", response.status, result);
+      logger.error("API returned non-OK status:", response.status, result);
       throw new Error(result.message || "Failed to resubscribe");
     }
 
@@ -90,7 +92,7 @@ export default async function handler(
         });
       }
 
-      console.log(
+      logger.info(
         "Newsletter resubscribe successful:",
         actualResult.subscriber_id,
       );
@@ -111,14 +113,15 @@ export default async function handler(
         });
       }
 
-      console.error("API returned success: false", actualResult);
+      logger.error("API returned success: false", actualResult);
       throw new Error(actualResult.message || "Resubscription failed");
     }
   } catch (error) {
-    console.error("Error processing resubscribe request:", error);
+    logger.error("Error processing resubscribe request:", error);
 
     // Provide more helpful error message
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
 
     return res.status(500).json({
       success: false,

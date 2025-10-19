@@ -21,6 +21,7 @@ export default function NewsletterForm() {
         type: "error",
         text: "Please confirm that you want to receive notifications.",
       });
+
       return;
     }
 
@@ -45,7 +46,7 @@ export default function NewsletterForm() {
           setAcceptNotifications(false);
         }
       }
-    } catch (error) {
+    } catch {
       setMessage({
         type: "error",
         text: "Something went wrong. Please try again later.",
@@ -61,7 +62,8 @@ export default function NewsletterForm() {
         Join Our Newsletter
       </h3>
       <p className="mb-6 text-gray-600">
-        Get exclusive access to court bookings, events, pro tips, and special offers.
+        Get exclusive access to court bookings, events, pro tips, and special
+        offers.
       </p>
 
       <form className="flex flex-col gap-4" onSubmit={handleSubmit}>

@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useMemo } from "react";
+
 import ImageCarousel from "./image-carousel";
+
 import { CAROUSEL_IMAGES } from "@/config/carousel-images";
 import { getCourtImageUrl } from "@/config/media-urls";
 
@@ -12,29 +14,24 @@ interface SupabaseImageCarouselProps {
   className?: string;
 }
 
+// Pre-compute images at module level for better SSR compatibility
+const CAROUSEL_IMAGE_DATA = CAROUSEL_IMAGES.map((filename) => {
+  const imageUrl = getCourtImageUrl(filename);
+
+  return {
+    src: imageUrl,
+    alt: filename.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " "),
+  };
+});
+
 export const SupabaseImageCarousel = ({
   autoplayInterval = 5000,
   showControls = true,
   showIndicators = true,
   className = "",
 }: SupabaseImageCarouselProps) => {
-  const [images, setImages] = useState<Array<{ src: string; srcSet?: string; alt: string }>>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    // Build image URLs from CloudFront CDN
-    const imageData = CAROUSEL_IMAGES.map((filename) => {
-      const imageUrl = getCourtImageUrl(filename);
-
-      return {
-        src: imageUrl,
-        alt: filename.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " "),
-      };
-    });
-
-    setImages(imageData);
-    setLoading(false);
-  }, []);
+  // Use pre-computed images - no state needed
+  const images = useMemo(() => CAROUSEL_IMAGE_DATA, []);
 
   if (images.length === 0) {
     return null;
@@ -42,11 +39,11 @@ export const SupabaseImageCarousel = ({
 
   return (
     <ImageCarousel
-      images={images}
       autoplayInterval={autoplayInterval}
+      className={className}
+      images={images}
       showControls={showControls}
       showIndicators={showIndicators}
-      className={className}
     />
   );
 };

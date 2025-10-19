@@ -1,57 +1,58 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import dynamic from "next/dynamic";
 import { Button } from "@heroui/button";
-import { Icon } from "@iconify/react";
-import { AnimatePresence, LazyMotion, domAnimation, m } from "framer-motion";
+import {
+  ArrowRight,
+  Home,
+  Sun,
+  Lightbulb,
+  Droplet,
+  ShoppingBag,
+  Coffee,
+  ShieldCheck,
+  Award,
+} from "lucide-react";
 
 import DefaultLayout from "@/layouts/default";
-import FAQsSection from "@/components/faqs";
-import WaitlistModal from "@/components/WaitlistModal";
-import RoadmapStepper from "@/components/roadmap-stepper";
-import SupabaseImageCarousel from "@/components/supabase-image-carousel";
-import VideoBanner from "@/components/video-banner";
 
-// Animation variants for cleaner code organization
-const fadeInVariants = {
-  hidden: {
-    filter: "blur(16px)",
-    opacity: 0,
-    x: 15,
-  },
-  visible: {
-    filter: "blur(0px)",
-    opacity: 1,
-    x: 0,
-  },
-};
-
-// Animation configuration constants
-const ANIMATION_CONFIG = {
-  bounce: 0,
-  duration: 0.8,
-  type: "spring" as const,
-};
-
-const STAGGER_DELAYS = {
-  title: 0.1,
-  description: 0.3,
-  buttons: 0.5,
-  features: 0.6,
-};
+// Dynamically import below-the-fold components
+const VideoBanner = dynamic(() => import("@/components/video-banner"), {
+  ssr: false,
+});
+const SupabaseImageCarousel = dynamic(
+  () => import("@/components/supabase-image-carousel"),
+  { ssr: false },
+);
+const RoadmapStepper = dynamic(() => import("@/components/roadmap-stepper"), {
+  ssr: false,
+});
+const FAQsSection = dynamic(() => import("@/components/faqs"), {
+  ssr: false,
+});
+const WaitlistModal = dynamic(() => import("@/components/WaitlistModal"), {
+  ssr: false,
+});
 
 // Feature data for better maintainability
 const FACILITY_FEATURES = [
-  { icon: "solar:home-smile-angle-bold", text: "5 Indoor Courts" },
-  { icon: "solar:sun-2-bold", text: "5 Outdoor Courts" },
-  { icon: "solar:lightbulb-bolt-bold", text: "LED Lighting" },
-  { icon: "solar:waterdrops-bold", text: "Water Stations" },
-  { icon: "solar:shop-2-bold", text: "Pro Shop" },
-  { icon: "solar:cup-hot-bold", text: "Lounge Area" },
-  { icon: "solar:shield-check-bold", text: "Certified Coaches" },
-  { icon: "solar:medal-ribbon-star-bold", text: "Tournament Ready" },
+  { Icon: Home, text: "5 Indoor Courts" },
+  { Icon: Sun, text: "5 Outdoor Courts" },
+  { Icon: Lightbulb, text: "LED Lighting" },
+  { Icon: Droplet, text: "Water Stations" },
+  { Icon: ShoppingBag, text: "Pro Shop" },
+  { Icon: Coffee, text: "Lounge Area" },
+  { Icon: ShieldCheck, text: "Certified Coaches" },
+  { Icon: Award, text: "Tournament Ready" },
 ] as const;
 
 export default function IndexPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  useEffect(() => {
+    // Trigger animations on mount
+    setIsLoaded(true);
+  }, []);
 
   const handleOpenModal = () => setIsModalOpen(true);
   const handleCloseModal = () => setIsModalOpen(false);
@@ -69,11 +70,7 @@ export default function IndexPage() {
             <Button
               className="h-9 animate-pulse-slow overflow-hidden bg-dink-lime px-3 sm:px-4 py-2 text-xs sm:text-small font-bold uppercase leading-5 text-black"
               endContent={
-                <Icon
-                  className="flex-none outline-hidden [&>path]:stroke-2"
-                  icon="solar:arrow-right-linear"
-                  width={20}
-                />
+                <ArrowRight className="flex-none" size={20} strokeWidth={2} />
               }
               radius="full"
               variant="solid"
@@ -81,124 +78,94 @@ export default function IndexPage() {
               Coming Soon - Opening 2026
             </Button>
 
-            <LazyMotion features={domAnimation}>
-              <m.div
-                animate="visible"
-                className="flex flex-col gap-6"
-                exit="hidden"
-                initial="hidden"
-                transition={{
-                  duration: 0.25,
-                  ease: "easeInOut",
-                }}
-                variants={{
-                  hidden: { width: "auto" },
-                  visible: { width: "auto" },
-                }}
+            <div className="flex flex-col gap-6">
+              {/* Hero Title */}
+              <div
+                className={`text-start font-bold leading-[1.2] tracking-tighter transition-all duration-1000 ease-out ${
+                  isLoaded
+                    ? "opacity-100 blur-0 translate-x-0"
+                    : "opacity-0 blur-[16px] translate-x-[15px]"
+                }`}
+                style={{ transitionDelay: "100ms" }}
               >
-                <AnimatePresence mode="wait">
-                  {/* Hero Title */}
-                  <m.div
-                    key="hero-title"
-                    animate="visible"
-                    className="text-start font-bold leading-[1.2] tracking-tighter"
-                    initial="hidden"
-                    transition={{
-                      ...ANIMATION_CONFIG,
-                      delay: STAGGER_DELAYS.title,
-                      duration: ANIMATION_CONFIG.duration + 0.8,
-                    }}
-                    variants={fadeInVariants}
+                <div className="font-display uppercase">
+                  <span className="block text-[clamp(40px,8vw,100px)] leading-[0.9] text-black dark:text-white">
+                    THE DINK
+                  </span>
+                  <span className="mt-2 inline-block bg-dink-lime px-2 sm:px-3 text-[clamp(40px,8vw,100px)] leading-[0.9] text-black">
+                    HOUSE
+                  </span>
+                  <span className="mt-3 sm:mt-4 block text-[clamp(18px,3vw,36px)] tracking-wider text-dink-lime">
+                    Coming Soon
+                  </span>
+                </div>
+              </div>
+
+              {/* Description */}
+              <div
+                className={`text-start font-normal leading-6 sm:leading-7 text-default-500 text-sm sm:text-base lg:text-lg max-w-xl lg:max-w-2xl transition-all duration-1000 ease-out ${
+                  isLoaded
+                    ? "opacity-100 blur-0 translate-x-0"
+                    : "opacity-0 blur-[16px] translate-x-[15px]"
+                }`}
+                style={{ transitionDelay: "300ms" }}
+              >
+                Bell County&apos;s first indoor pickleball facility featuring 10
+                championship courts in the heart of Central Texas. Experience
+                year-round play with 5 climate-controlled indoor courts and 5
+                outdoor courts. Proudly serving Belton, Killeen, Copperas Cove,
+                Fort Hood, Temple, and the surrounding communities.
+              </div>
+
+              {/* Call-to-Action Buttons */}
+              <div
+                className={`flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4 lg:gap-6 transition-all duration-1000 ease-out ${
+                  isLoaded
+                    ? "opacity-100 blur-0 translate-x-0"
+                    : "opacity-0 blur-[16px] translate-x-[15px]"
+                }`}
+                style={{ transitionDelay: "500ms" }}
+              >
+                <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
+                  <Button
+                    className="h-10 w-full bg-dink-lime px-[15px] text-sm font-bold uppercase text-black transition-colors hover:bg-dink-lime-dark sm:h-12 sm:w-auto sm:px-8 sm:text-base"
+                    radius="full"
+                    size="lg"
+                    onPress={handleOpenModal}
                   >
-                    <div className="font-display uppercase">
-                      <span className="block text-[clamp(40px,8vw,100px)] leading-[0.9] text-black dark:text-white">
-                        THE DINK
-                      </span>
-                      <span className="mt-2 inline-block bg-dink-lime px-2 sm:px-3 text-[clamp(40px,8vw,100px)] leading-[0.9] text-black">
-                        HOUSE
-                      </span>
-                      <span className="mt-3 sm:mt-4 block text-[clamp(18px,3vw,36px)] tracking-wider text-dink-lime">
-                        Coming Soon
-                      </span>
+                    Get Notified When We Open
+                  </Button>
+                </div>
+              </div>
+
+              {/* Feature Highlights */}
+              <div
+                className={`mt-4 flex flex-wrap gap-3 sm:gap-4 lg:gap-6 transition-all duration-1000 ease-out ${
+                  isLoaded
+                    ? "opacity-100 blur-0 translate-x-0"
+                    : "opacity-0 blur-[16px] translate-x-[15px]"
+                }`}
+                style={{ transitionDelay: "600ms" }}
+              >
+                {FACILITY_FEATURES.map((feature, index) => {
+                  const IconComponent = feature.Icon;
+
+                  return (
+                    <div
+                      key={`feature-${index}`}
+                      className="flex items-center gap-2 text-xs sm:text-small text-default-500"
+                    >
+                      <IconComponent
+                        className="text-dink-lime"
+                        size={20}
+                        strokeWidth={2}
+                      />
+                      <span className="font-semibold">{feature.text}</span>
                     </div>
-                  </m.div>
-
-                  {/* Description */}
-                  <m.div
-                    key="hero-description"
-                    animate="visible"
-                    className="text-start font-normal leading-6 sm:leading-7 text-default-500 text-sm sm:text-base lg:text-lg max-w-xl lg:max-w-2xl"
-                    initial="hidden"
-                    transition={{
-                      ...ANIMATION_CONFIG,
-                      delay: STAGGER_DELAYS.description,
-                      duration: ANIMATION_CONFIG.duration + 0.9,
-                    }}
-                    variants={fadeInVariants}
-                  >
-                    Bell County&apos;s first indoor pickleball facility
-                    featuring 10 championship courts in the heart of Central
-                    Texas. Experience year-round play with 5 climate-controlled
-                    indoor courts and 5 outdoor courts. Proudly serving Belton,
-                    Killeen, Copperas Cove, Fort Hood, Temple, and the
-                    surrounding communities.
-                  </m.div>
-
-                  {/* Call-to-Action Buttons */}
-                  <m.div
-                    key="hero-buttons"
-                    animate="visible"
-                    className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4 lg:gap-6"
-                    initial="hidden"
-                    transition={{
-                      ...ANIMATION_CONFIG,
-                      delay: STAGGER_DELAYS.buttons,
-                      duration: ANIMATION_CONFIG.duration + 1.0,
-                    }}
-                    variants={fadeInVariants}
-                  >
-                    <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
-                      <Button
-                        className="h-10 w-full bg-dink-lime px-[15px] text-sm font-bold uppercase text-black transition-colors hover:bg-dink-lime-dark sm:h-12 sm:w-auto sm:px-8 sm:text-base"
-                        radius="full"
-                        size="lg"
-                        onPress={handleOpenModal}
-                      >
-                        Get Notified When We Open
-                      </Button>
-                    </div>
-                  </m.div>
-
-                  {/* Feature Highlights */}
-                  <m.div
-                    key="hero-features"
-                    animate="visible"
-                    className="mt-4 flex flex-wrap gap-3 sm:gap-4 lg:gap-6"
-                    initial="hidden"
-                    transition={{
-                      ...ANIMATION_CONFIG,
-                      delay: STAGGER_DELAYS.features,
-                      duration: ANIMATION_CONFIG.duration + 1.1,
-                    }}
-                    variants={fadeInVariants}
-                  >
-                    {FACILITY_FEATURES.map((feature, index) => (
-                      <div
-                        key={`feature-${index}`}
-                        className="flex items-center gap-2 text-xs sm:text-small text-default-500"
-                      >
-                        <Icon
-                          className="text-dink-lime"
-                          icon={feature.icon}
-                          width={20}
-                        />
-                        <span className="font-semibold">{feature.text}</span>
-                      </div>
-                    ))}
-                  </m.div>
-                </AnimatePresence>
-              </m.div>
-            </LazyMotion>
+                  );
+                })}
+              </div>
+            </div>
           </section>
         </main>
       </div>
@@ -207,10 +174,10 @@ export default function IndexPage() {
       <section className="mx-auto w-full max-w-7xl px-4 py-12 sm:py-16 sm:px-6 lg:px-8">
         <div className="w-full">
           <SupabaseImageCarousel
+            autoplayInterval={5000}
             className="w-full h-[400px] sm:h-[500px] lg:h-[600px] rounded-xl overflow-hidden"
             showControls={true}
             showIndicators={true}
-            autoplayInterval={5000}
           />
         </div>
       </section>

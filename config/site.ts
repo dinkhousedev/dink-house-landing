@@ -43,50 +43,25 @@ export const siteConfig = {
     },
   ],
   navMenuItems: [
-    // {
-    //   label: "Book Court Time",
-    //   href: "/booking",
-    // },
-    // {
-    //   label: "My Account",
-    //   href: "/account",
-    // },
-    // {
-    //   label: "Memberships",
-    //   href: "/memberships",
-    // },
-    // {
-    //   label: "Lessons & Clinics",
-    //   href: "/lessons",
-    // },
-    // {
-    //   label: "Tournaments",
-    //   href: "/tournaments",
-    // },
-    // {
-    //   label: "League Play",
-    //   href: "/leagues",
-    // },
-    // {
-    //   label: "Pro Shop",
-    //   href: "/shop",
     {
-      label: "Build the Courts",
+      label: "Campaign",
       href: "/campaign",
-    },
-    {
-      label: "Contact Us",
-      href: "/contact",
     },
     {
       label: "FAQs",
       href: "/#faqs",
     },
+    {
+      label: "Contact Us",
+      href: "/contact",
+    },
   ],
   links: {
-    facebook: "https://www.facebook.com/profile.php?id=61581427090217&rdid=gITEzuevUrI2I1xT&share_url=https%3A%2F%2Fwww.facebook.com%2Fshare%2F1EAaDCQeoU%2F#",
-    instagram: "https://www.instagram.com/the.dink.house?igsh=MTNuamlseXZkaWFjZg%3D%3D&utm_source=qr",
-    tiktok:  "https://www.tiktok.com/@thedinkhousetx?lang=en",
+    facebook:
+      "https://www.facebook.com/profile.php?id=61581427090217&rdid=gITEzuevUrI2I1xT&share_url=https%3A%2F%2Fwww.facebook.com%2Fshare%2F1EAaDCQeoU%2F#",
+    instagram:
+      "https://www.instagram.com/the.dink.house?igsh=MTNuamlseXZkaWFjZg%3D%3D&utm_source=qr",
+    tiktok: "https://www.tiktok.com/@thedinkhousetx?lang=en",
     youtube: "https://youtube.com/@thedinkhouse",
   },
 };

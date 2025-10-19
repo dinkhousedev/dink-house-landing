@@ -1,70 +1,25 @@
 "use client";
 
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import { Button } from "@heroui/button";
-import { Input } from "@heroui/input";
 
 import { Head } from "./head";
 
 import { Navbar } from "@/components/navbar";
-import ResubscribeModal from "@/components/ResubscribeModal";
+
+// Dynamically import modal
+const ResubscribeModal = dynamic(
+  () => import("@/components/ResubscribeModal"),
+  { ssr: false },
+);
 
 export default function DefaultLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const [email, setEmail] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState<{
-    type: "success" | "error";
-    text: string;
-  } | null>(null);
   const [isResubscribeModalOpen, setIsResubscribeModalOpen] = useState(false);
-
-  const handleNewsletterSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setMessage(null);
-
-    try {
-      const response = await fetch("/api/contact", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          email,
-          firstName: "",
-          lastName: "",
-        }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setMessage({
-          type: "success",
-          text: data.message.includes("already on our waitlist")
-            ? "You're already subscribed!"
-            : "Thank you for subscribing!",
-        });
-        setEmail("");
-      } else {
-        setMessage({
-          type: "error",
-          text: data.error || "Something went wrong",
-        });
-      }
-    } catch (error) {
-      setMessage({
-        type: "error",
-        text: "Network error. Please try again.",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <div className="relative flex flex-col min-h-screen">
@@ -73,8 +28,6 @@ export default function DefaultLayout({
       <main className="flex-grow">{children}</main>
       <footer className="w-full bg-black text-white py-8">
         <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-
-
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="flex flex-col items-center md:items-start">
               <h3 className="font-display text-2xl uppercase mb-2">
@@ -95,9 +48,7 @@ export default function DefaultLayout({
           {/* Resubscribe Section */}
           <div className="border-t border-gray-800 mt-6 pt-6">
             <div className="text-center">
-              <p className="text-gray-400 text-sm mb-2">
-                Changed your mind?
-              </p>
+              <p className="text-gray-400 text-sm mb-2">Changed your mind?</p>
               <Button
                 className="bg-dink-lime text-black font-bold"
                 size="sm"
