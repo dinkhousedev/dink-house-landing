@@ -19,7 +19,8 @@ export default function Document() {
               function gtag(){dataLayer.push(arguments);}
               gtag('js', new Date());
               gtag('config', 'G-BYQ2H62BSK', {
-                'cookie_flags': 'SameSite=None;Secure'
+                'cookie_domain': 'auto',
+                ${process.env.NODE_ENV === "production" ? "'cookie_flags': 'SameSite=None;Secure'" : ""}
               });
             `,
           }}
