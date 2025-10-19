@@ -11,6 +11,9 @@ jobs:
     # Only run when PR is from dev to staging
     if: github.head_ref == 'dev' || startsWith(github.head_ref, 'dev/')
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
 
     steps:
       - name: Checkout code
@@ -31,11 +34,15 @@ jobs:
       - name: Remove console statements
         run: |
           # Find all JS/TS/JSX/TSX files and remove console statements
+          # Exclude scripts/, config files, and lib/logger.ts
           find . -type f \( -name "*.js" -o -name "*.jsx" -o -name "*.ts" -o -name "*.tsx" \) \
             -not -path "*/node_modules/*" \
             -not -path "*/.next/*" \
             -not -path "*/dist/*" \
             -not -path "*/build/*" \
+            -not -path "*/scripts/*" \
+            -not -path "*/*.config.*" \
+            -not -path "*/lib/logger.*" \
             -exec sed -i '/console\.\(log\|debug\|info\|warn\|trace\|table\|time\|timeEnd\)/d' {} \;
 
       - name: Remove debugger statements
@@ -136,7 +143,18 @@ jobs:
 
       - name: Check for console statements
         run: |
-          if grep -r "console\.\(log\|debug\|info\)" --include="*.js" --include="*.jsx" --include="*.ts" --include="*.tsx" --exclude-dir=node_modules --exclude-dir=.next .; then
-            echo "⚠️ Warning: Console statements found in code"
+          # Check for console statements but exclude scripts, config files, and logger
+          if grep -r "console\.\(log\|debug\|info\)" \
+            --include="*.js" \
+            --include="*.jsx" \
+            --include="*.ts" \
+            --include="*.tsx" \
+            --exclude-dir=node_modules \
+            --exclude-dir=.next \
+            --exclude-dir=scripts \
+            --exclude="*.config.*" \
+            --exclude="logger.*" \
+            .; then
+            echo "⚠️ Warning: Console statements found in application code"
             exit 1
           fi
