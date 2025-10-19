@@ -20,7 +20,7 @@ export default function Document() {
               gtag('js', new Date());
               gtag('config', 'G-BYQ2H62BSK', {
                 'cookie_domain': 'auto',
-                ${process.env.NODE_ENV === 'production' ? "'cookie_flags': 'SameSite=None;Secure'" : ''}
+                ${process.env.NODE_ENV === "production" ? "'cookie_flags': 'SameSite=None;Secure'" : ""}
               });
             `,
           }}

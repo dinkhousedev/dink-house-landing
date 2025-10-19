@@ -198,11 +198,15 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
           first_name: backer.first_name,
           amount: parseFloat(contribution.amount).toFixed(2),
           tier_name: tierName,
-          contribution_date: new Date(contribution.completed_at).toLocaleDateString(),
+          contribution_date: new Date(
+            contribution.completed_at,
+          ).toLocaleDateString(),
           contribution_id: contribution.id,
           payment_method: contribution.payment_method || "card",
-          stripe_charge_id: contribution.stripe_charge_id || session.payment_intent as string,
-          site_url: process.env.NEXT_PUBLIC_SITE_URL || "https://thedinkhouse.com",
+          stripe_charge_id:
+            contribution.stripe_charge_id || (session.payment_intent as string),
+          site_url:
+            process.env.NEXT_PUBLIC_SITE_URL || "https://thedinkhouse.com",
         };
 
         await sendEmail({
@@ -214,7 +218,9 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
           tags: ["contribution", "thank-you"],
         });
 
-        logger.info("Thank you email sent successfully", { email: backer.email });
+        logger.info("Thank you email sent successfully", {
+          email: backer.email,
+        });
       } else {
         logger.warn("Backer not found for email sending", { backerId });
       }
