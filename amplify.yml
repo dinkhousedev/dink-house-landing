@@ -25,8 +25,8 @@ frontend:
             echo "✓ Using environment variables set in Amplify Console"
           fi
 
-        # Clean install with production-only dependencies
-        - npm ci --production=false
+        # Install dependencies (package-lock.json is gitignored)
+        - npm install
 
         # Verify no debug packages are in production dependencies
         - echo "Verifying production dependencies..."
