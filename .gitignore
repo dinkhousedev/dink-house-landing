@@ -27,6 +27,11 @@ yarn-error.log*
 # local env files
 .env*.local
 
+# Environment files with secrets (ignore all .env files except .env.example)
+.env
+.env.*
+!.env.example
+
 # vercel
 .vercel
 
@@ -38,3 +43,4 @@ pnpm-lock.yaml
 yarn.lock
 package-lock.json
 bun.lockb
+.env.example
