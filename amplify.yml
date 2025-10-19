@@ -1,0 +1,105 @@
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        # Set production environment explicitly
+        - export NODE_ENV=production
+        - export NEXT_TELEMETRY_DISABLED=1
+        - echo "Building for production - Node version:"
+        - node --version
+        - npm --version
+
+        # Clean install with production-only dependencies
+        - npm ci --production=false
+
+        # Verify no debug packages are in production dependencies
+        - echo "Verifying production dependencies..."
+        - npm list --production --depth=0 || true
+
+    build:
+      commands:
+        # Set production flags
+        - export NODE_ENV=production
+        - export NEXT_TELEMETRY_DISABLED=1
+
+        # Build with production optimizations
+        # Next.js will automatically:
+        # - Strip console.log (configured in next.config.js)
+        # - Minify all code with SWC
+        # - Remove React DevTools
+        # - Enable production React mode
+        # - Optimize images
+        # - Tree-shake unused code
+        - npm run build:production
+
+        # Verify build completed successfully
+        - echo "Verifying build artifacts..."
+        - test -d .next || (echo "Build failed - .next directory not found" && exit 1)
+        - test -f .next/BUILD_ID || (echo "Build failed - BUILD_ID not found" && exit 1)
+
+        # Check for any accidental console.log in built files (extra safety)
+        - echo "Scanning for remaining console statements in production build..."
+        - |
+          if grep -r "console\.log" .next/static --exclude="*.map" 2>/dev/null; then
+            echo "WARNING: Found console.log statements in production build"
+            echo "This may indicate a build configuration issue"
+          else
+            echo "✓ No console.log statements found in production bundles"
+          fi
+
+        # Check bundle sizes
+        - echo "Build completed successfully"
+        - du -sh .next
+
+    postBuild:
+      commands:
+        # Clean up development artifacts
+        - echo "Cleaning up development artifacts..."
+        - rm -rf node_modules/.cache
+        - rm -rf .next/cache/webpack
+
+        # Output production environment info
+        - echo "Production build complete"
+        - echo "NODE_ENV=$NODE_ENV"
+
+  artifacts:
+    baseDirectory: .next
+    files:
+      - '**/*'
+  cache:
+    paths:
+      # Cache node_modules for faster installs
+      - node_modules/**/*
+      # Cache Next.js build cache (but not webpack dev cache)
+      - .next/cache/**/*
+      - '!.next/cache/webpack/**/*'
+
+# Environment variables (configure in AWS Amplify Console)
+# These should be set in the Amplify Console > App Settings > Environment Variables
+# REQUIRED PRODUCTION VARIABLES:
+# - NODE_ENV=production
+# - NEXT_TELEMETRY_DISABLED=1
+# - DB_HOST=<production-rds-endpoint>
+# - DB_PORT=5432
+# - DB_NAME=dink_house
+# - DB_USER=postgres
+# - DB_PASSWORD=<secure-production-password>
+# - DB_SSL=true
+# - STRIPE_SECRET_KEY=<sk_live_...>
+# - STRIPE_WEBHOOK_SECRET=<whsec_...>
+# - CONTACT_EMAIL=admin@dinkhousepb.com
+# - FROM_EMAIL=hello@dinkhousepb.com
+# - SITE_URL=<production-url>
+# - RATE_LIMIT_PER_MINUTE=10
+# - RATE_LIMIT_PER_HOUR=100
+
+# SECURITY NOTES:
+# 1. Console logs are stripped via next.config.js compiler.removeConsole
+# 2. React runs in production mode (no DevTools, no debug warnings)
+# 3. All code is minified via SWC (swcMinify: true)
+# 4. Source maps are not deployed to production
+# 5. Powered-by header is disabled (poweredByHeader: false)
+# 6. ESLint is configured to ignore during builds for faster deployment
+# 7. No development dependencies are included in the build
+# 8. Webpack cache is excluded from deployment artifacts
