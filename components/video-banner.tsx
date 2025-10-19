@@ -5,7 +5,7 @@ import { MEDIA_URLS } from "@/config/media-urls";
 import { logger } from "@/lib/logger";
 
 const VIDEO_URLS = MEDIA_URLS.videos;
-const LOGO_URL = MEDIA_URLS.logo;
+const LOGO_URL = "/dinklogo.jpg"; // Use local file for website display
 
 export default function VideoBanner() {
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
