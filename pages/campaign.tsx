@@ -7,11 +7,20 @@ import { Chip } from "@heroui/chip";
 import { Icon } from "@iconify/react";
 import Image from "next/image";
 import { LazyMotion, domAnimation, m } from "framer-motion";
+import { graphqlOperation } from "aws-amplify/api";
 
 import DefaultLayout from "@/layouts/default";
 import ContributionModal from "@/components/ContributionModal";
 import { getCampaignImageUrl } from "@/config/media-urls";
 import { logger } from "@/lib/logger";
+import { graphqlClient } from "@/lib/graphql/client";
+import { GET_CAMPAIGN_DATA } from "@/lib/graphql/queries";
+import type {
+  Campaign,
+  ContributionTier as GraphQLTier,
+  Founder,
+  GetCampaignDataResponse,
+} from "@/lib/graphql/types";
 
 interface CampaignType {
   id: string;
@@ -71,8 +80,7 @@ export default function CampaignPage() {
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
 
   useEffect(() => {
-    fetchCampaignData();
-    fetchFounders();
+    fetchAllCampaignData();
   }, []);
 
   // Check for successful payment redirect
@@ -80,8 +88,7 @@ export default function CampaignPage() {
     if (router.query.success === "true") {
       setShowSuccessMessage(true);
       // Refresh data to show updated amounts
-      fetchCampaignData();
-      fetchFounders();
+      fetchAllCampaignData();
       // Clean up URL after 500ms
       setTimeout(() => {
         router.replace("/campaign", undefined, { shallow: true });
@@ -93,33 +100,76 @@ export default function CampaignPage() {
     }
   }, [router.query]);
 
-  const fetchCampaignData = async () => {
+  // Fetch all campaign data using GraphQL (single query!)
+  const fetchAllCampaignData = async () => {
     try {
-      logger.info("Fetching campaigns from AWS RDS...");
+      setLoading(true);
+      logger.info("Fetching campaign data from AppSync GraphQL...");
 
-      // Fetch campaigns from Next.js API route (which calls AWS Lambda)
-      const campaignsResponse = await fetch("/api/campaigns");
+      const response = (await graphqlClient.graphql({
+        query: GET_CAMPAIGN_DATA,
+      })) as { data: GetCampaignDataResponse };
 
-      if (!campaignsResponse.ok) {
-        throw new Error(
-          `Failed to fetch campaigns: ${campaignsResponse.statusText}`,
-        );
+      const { campaigns, tiers: tiersList, founders } = response.data.getCampaignData;
+
+      logger.info(`GraphQL fetched: ${campaigns.length} campaigns, ${tiersList.length} tiers, ${founders.length} founders`);
+
+      // Set campaigns
+      setCampaigns(campaigns);
+
+      // Group tiers by campaign
+      const tiersByCampaign: Record<string, ContributionTier[]> = {};
+
+      tiersList.forEach((tier: GraphQLTier) => {
+        if (!tiersByCampaign[tier.campaign_type_id]) {
+          tiersByCampaign[tier.campaign_type_id] = [];
+        }
+        // Convert benefits from string[] to {text: string}[] for compatibility
+        const formattedTier: ContributionTier = {
+          ...tier,
+          benefits: tier.benefits.map((text) => ({ text })),
+        };
+
+        tiersByCampaign[tier.campaign_type_id].push(formattedTier);
+      });
+
+      setTiers(tiersByCampaign);
+      setFounders(founders);
+
+      logger.debug("Campaign data loaded successfully");
+    } catch (error) {
+      logger.error("Error fetching campaign data from GraphQL:", error);
+      // Fallback to REST API if GraphQL fails
+      logger.warn("Falling back to REST API...");
+      await fetchCampaignDataREST();
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Fallback: REST API version (kept for compatibility)
+  const fetchCampaignDataREST = async () => {
+    try {
+      logger.info("Fetching campaigns from REST API...");
+
+      const [campaignsResponse, tiersResponse, foundersResponse] =
+        await Promise.all([
+          fetch("/api/campaigns"),
+          fetch("/api/contribution-tiers"),
+          fetch("/api/founders"),
+        ]);
+
+      if (!campaignsResponse.ok || !tiersResponse.ok || !foundersResponse.ok) {
+        throw new Error("Failed to fetch campaign data from REST API");
       }
-      const campaignsData = await campaignsResponse.json();
 
-      logger.debug("Campaigns response:", campaignsData);
+      const [campaignsData, tiersData, foundersData] = await Promise.all([
+        campaignsResponse.json(),
+        tiersResponse.json(),
+        foundersData.json(),
+      ]);
 
       setCampaigns(campaignsData || []);
-
-      // Fetch contribution tiers
-      const tiersResponse = await fetch("/api/contribution-tiers");
-
-      if (!tiersResponse.ok) {
-        throw new Error(`Failed to fetch tiers: ${tiersResponse.statusText}`);
-      }
-      const tiersData = await tiersResponse.json();
-
-      logger.debug("Tiers response:", tiersData);
 
       const tiersByCampaign: Record<string, ContributionTier[]> = {};
 
@@ -127,45 +177,13 @@ export default function CampaignPage() {
         if (!tiersByCampaign[tier.campaign_type_id]) {
           tiersByCampaign[tier.campaign_type_id] = [];
         }
-        // Debug: Log first tier's benefits
-        if (Object.keys(tiersByCampaign).length === 0) {
-          logger.debug("First tier benefits:", tier.benefits);
-        }
         tiersByCampaign[tier.campaign_type_id].push(tier);
       });
 
       setTiers(tiersByCampaign);
-      logger.debug("Campaigns loaded:", campaignsData?.length);
-      logger.debug("Tiers loaded:", tiersData?.length);
-      logger.debug(
-        "First 3 tier IDs:",
-        tiersData
-          ?.slice(0, 3)
-          .map((t: ContributionTier) => ({ id: t.id, name: t.name })),
-      );
+      setFounders(foundersData || []);
     } catch (error) {
-      logger.error("Error fetching campaign data:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchFounders = async () => {
-    try {
-      logger.info("Fetching founders from AWS RDS...");
-
-      const response = await fetch("/api/founders");
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch founders: ${response.statusText}`);
-      }
-      const data = await response.json();
-
-      logger.debug("Founders response:", data);
-
-      setFounders(data || []);
-    } catch (error) {
-      logger.error("Error fetching founders:", error);
+      logger.error("Error fetching campaign data from REST:", error);
     }
   };
 
@@ -185,8 +203,7 @@ export default function CampaignPage() {
   };
 
   const handleContributionSuccess = () => {
-    fetchCampaignData();
-    fetchFounders();
+    fetchAllCampaignData();
   };
 
   const formatCurrency = (amount: number) => {
