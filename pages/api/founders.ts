@@ -1,19 +1,11 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 
-import { Pool } from "pg";
-
 import { logger } from "@/lib/logger";
 
-const pool = new Pool({
-  host: process.env.DB_HOST,
-  port: parseInt(process.env.DB_PORT || "5432"),
-  database: process.env.DB_NAME || "dink_house",
-  user: process.env.DB_USER || "postgres",
-  password: process.env.DB_PASSWORD,
-  ssl: process.env.DB_SSL === "true" ? { rejectUnauthorized: false } : false,
-  max: 5,
-  idleTimeoutMillis: 30000,
-});
+// Backend API URL from environment
+const BACKEND_API_URL =
+  process.env.NEXT_PUBLIC_API_URL ||
+  "https://z5afj0ni48.execute-api.us-west-1.amazonaws.com/prod";
 
 export default async function handler(
   req: NextApiRequest,
@@ -24,36 +16,32 @@ export default async function handler(
   }
 
   try {
-    logger.info("Fetching founders from database...");
+    logger.info("Fetching founders from backend API...", {
+      backendUrl: BACKEND_API_URL,
+    });
 
-    const result = await pool.query(
-      `SELECT
-        id,
-        display_name,
-        location,
-        contribution_tier,
-        total_contributed,
-        is_featured,
-        metadata,
-        created_at,
-        updated_at
-      FROM public.founders_wall
-      ORDER BY is_featured DESC, total_contributed DESC, created_at DESC`,
-    );
+    const response = await fetch(`${BACKEND_API_URL}/campaigns/founders`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
 
-    logger.info(`Successfully fetched ${result.rows.length} founders`);
-    res.status(200).json(result.rows);
+    if (!response.ok) {
+      throw new Error(`Backend API returned ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    logger.info(`Successfully fetched ${data.length || 0} founders`);
+    res.status(200).json(data);
   } catch (error: any) {
     logger.error("Error fetching founders:", {
       message: error.message,
-      code: error.code,
-      detail: error.detail,
-      hint: error.hint,
     });
     res.status(500).json({
       error: "Failed to fetch founders",
       details: error.message,
-      code: error.code,
     });
   }
 }
