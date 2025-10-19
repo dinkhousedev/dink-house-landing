@@ -6,9 +6,24 @@ frontend:
         # Set production environment explicitly
         - export NODE_ENV=production
         - export NEXT_TELEMETRY_DISABLED=1
-        - echo "Building for production - Node version:"
+        - echo "Building for branch $AWS_BRANCH - Node version:"
         - node --version
         - npm --version
+
+        # Fetch secrets based on branch
+        # Production (us-east-2): Fetch from SSM Parameter Store
+        # Staging/Dev (us-east-1): Use Amplify environment variables
+        - |
+          if [ "$AWS_BRANCH" = "production" ]; then
+            echo "🔒 Production branch detected - fetching secrets from SSM Parameter Store (us-east-2)"
+            export STRIPE_SECRET_KEY=$(aws ssm get-parameter --name /dink-house/production/stripe-secret-key --with-decryption --query Parameter.Value --output text --region us-east-2)
+            export STRIPE_WEBHOOK_SECRET=$(aws ssm get-parameter --name /dink-house/production/stripe-webhook-secret --with-decryption --query Parameter.Value --output text --region us-east-2)
+            export DB_PASSWORD=$(aws ssm get-parameter --name /dink-house/production/db-password --with-decryption --query Parameter.Value --output text --region us-east-2)
+            echo "✓ Secrets fetched from SSM successfully"
+          else
+            echo "🔧 Non-production branch ($AWS_BRANCH) - using Amplify environment variables (no SSM)"
+            echo "✓ Using environment variables set in Amplify Console"
+          fi
 
         # Clean install with production-only dependencies
         - npm ci --production=false
@@ -77,22 +92,41 @@ frontend:
 
 # Environment variables (configure in AWS Amplify Console)
 # These should be set in the Amplify Console > App Settings > Environment Variables
-# REQUIRED PRODUCTION VARIABLES:
+#
+# IMPORTANT: Branch-specific configuration
+# - Production branch (us-east-2): Secrets fetched from SSM Parameter Store
+# - Staging/Dev branches (us-east-1): All variables set directly in Amplify Console
+#
+# REQUIRED AMPLIFY ENVIRONMENT VARIABLES (All Branches):
 # - NODE_ENV=production
 # - NEXT_TELEMETRY_DISABLED=1
-# - DB_HOST=<production-rds-endpoint>
+# - DB_HOST=<rds-endpoint>
 # - DB_PORT=5432
 # - DB_NAME=dink_house
 # - DB_USER=postgres
-# - DB_PASSWORD=<secure-production-password>
 # - DB_SSL=true
-# - STRIPE_SECRET_KEY=<sk_live_...>
+# - NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=<pk_live_... or pk_test_...>
+# - CONTACT_EMAIL=<contact-email>
+# - FROM_EMAIL=<from-email>
+# - SITE_URL=<site-url>
+# - NEXT_PUBLIC_SITE_URL=<site-url>
+# - NEXT_PUBLIC_AWS_API_URL=<api-gateway-url>
+# - BACKEND_API_URL=<api-gateway-url>
+# - NEXT_PUBLIC_CLOUDFRONT_URL=<cloudfront-url>
+# - NEXT_PUBLIC_MEDIA_BUCKET=<s3-bucket-name>
+# - RATE_LIMIT_PER_MINUTE=<rate-limit>
+# - RATE_LIMIT_PER_HOUR=<rate-limit>
+#
+# ADDITIONAL VARIABLES FOR NON-PRODUCTION BRANCHES (Staging/Dev only):
+# These are NOT needed for production (fetched from SSM instead):
+# - STRIPE_SECRET_KEY=<sk_test_...>
 # - STRIPE_WEBHOOK_SECRET=<whsec_...>
-# - CONTACT_EMAIL=admin@dinkhousepb.com
-# - FROM_EMAIL=hello@dinkhousepb.com
-# - SITE_URL=<production-url>
-# - RATE_LIMIT_PER_MINUTE=10
-# - RATE_LIMIT_PER_HOUR=100
+# - DB_PASSWORD=<staging-db-password>
+#
+# SSM PARAMETERS (Production only - us-east-2):
+# - /dink-house/production/stripe-secret-key (SecureString)
+# - /dink-house/production/stripe-webhook-secret (SecureString)
+# - /dink-house/production/db-password (SecureString)
 
 # SECURITY NOTES:
 # 1. Console logs are stripped via next.config.js compiler.removeConsole

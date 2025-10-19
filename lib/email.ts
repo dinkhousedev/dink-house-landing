@@ -21,7 +21,7 @@ export async function sendEmail({
     logger.info("Sending email via backend API", { to, subject });
 
     const backendUrl =
-      process.env.AWS_API_URL || process.env.NEXT_PUBLIC_AWS_API_URL;
+      process.env.BACKEND_API_URL || process.env.NEXT_PUBLIC_AWS_API_URL;
 
     if (!backendUrl) {
       logger.error("Backend API URL not configured");
