@@ -39,7 +39,9 @@ export async function transaction<T>(
   try {
     await client.query("BEGIN");
     const result = await callback(client);
+
     await client.query("COMMIT");
+
     return result;
   } catch (error) {
     await client.query("ROLLBACK");

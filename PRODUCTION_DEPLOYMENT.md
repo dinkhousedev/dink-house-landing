@@ -53,12 +53,14 @@ npm run start
 When ready to deploy to production:
 
 1. **Create Pull Request**:
+
    - Go to GitHub repository
    - Create PR: `staging` → `production`
    - Title: "Production Deploy: [Feature/Fix Description]"
    - Review all changes carefully
 
 2. **Verify Changes**:
+
    - Check that no sensitive data or test code is included
    - Ensure `.env.production` values are updated on hosting platform
    - Review that all console.log debugging is acceptable to be removed
@@ -89,14 +91,16 @@ npm run start
 ### Staging (.env.local)
 
 Use `.env.local` for staging with test/dev credentials:
-- Test Stripe keys (pk_test_...)
+
+- Test Stripe keys (pk*test*...)
 - Dev database
 - Staging API URLs
 
 ### Production (.env.production)
 
 Use `.env.production` or platform environment variables for production with live credentials:
-- Live Stripe keys (pk_live_...)
+
+- Live Stripe keys (pk*live*...)
 - Production database
 - Production API URLs
 
@@ -105,6 +109,7 @@ Use `.env.production` or platform environment variables for production with live
 ## What Gets Removed in Production
 
 When `NODE_ENV=production`:
+
 - ✅ All `console.log()` statements removed
 - ✅ All `console.info()` statements removed
 - ✅ All `console.debug()` statements removed
@@ -152,6 +157,7 @@ netlify deploy --prod
 ### Console logs still appearing in production
 
 1. Check `NODE_ENV` is set to `production`:
+
    ```bash
    echo $NODE_ENV
    ```
