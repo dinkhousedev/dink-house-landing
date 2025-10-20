@@ -11,14 +11,14 @@ frontend:
         - npm --version
 
         # Fetch secrets based on branch
-        # Production (us-east-2): Fetch from SSM Parameter Store
+        # Production (us-east-1): Fetch from SSM Parameter Store
         # Staging/Dev (us-east-1): Use Amplify environment variables
         - |
           if [ "$AWS_BRANCH" = "production" ]; then
-            echo "🔒 Production branch detected - fetching secrets from SSM Parameter Store (us-east-2)"
-            export STRIPE_SECRET_KEY=$(aws ssm get-parameter --name /dink-house/production/stripe-secret-key --with-decryption --query Parameter.Value --output text --region us-east-2)
-            export STRIPE_WEBHOOK_SECRET=$(aws ssm get-parameter --name /dink-house/production/stripe-webhook-secret --with-decryption --query Parameter.Value --output text --region us-east-2)
-            export DB_PASSWORD=$(aws ssm get-parameter --name /dink-house/production/db-password --with-decryption --query Parameter.Value --output text --region us-east-2)
+            echo "🔒 Production branch detected - fetching secrets from SSM Parameter Store (us-east-1)"
+            export STRIPE_SECRET_KEY=$(aws ssm get-parameter --name /dink-house/production/stripe-secret-key --with-decryption --query Parameter.Value --output text --region us-east-1)
+            export STRIPE_WEBHOOK_SECRET=$(aws ssm get-parameter --name /dink-house/production/stripe-webhook-secret --with-decryption --query Parameter.Value --output text --region us-east-1)
+            export DB_PASSWORD=$(aws ssm get-parameter --name /dink-house/production/db-password --with-decryption --query Parameter.Value --output text --region us-east-1)
             echo "✓ Secrets fetched from SSM successfully"
           else
             echo "🔧 Non-production branch ($AWS_BRANCH) - using Amplify environment variables (no SSM)"
@@ -94,7 +94,7 @@ frontend:
 # These should be set in the Amplify Console > App Settings > Environment Variables
 #
 # IMPORTANT: Branch-specific configuration
-# - Production branch (us-east-2): Secrets fetched from SSM Parameter Store
+# - Production branch (us-east-1): Secrets fetched from SSM Parameter Store
 # - Staging/Dev branches (us-east-1): All variables set directly in Amplify Console
 #
 # REQUIRED AMPLIFY ENVIRONMENT VARIABLES (All Branches):
@@ -123,7 +123,7 @@ frontend:
 # - STRIPE_WEBHOOK_SECRET=<whsec_...>
 # - DB_PASSWORD=<staging-db-password>
 #
-# SSM PARAMETERS (Production only - us-east-2):
+# SSM PARAMETERS (Production only - us-east-1):
 # - /dink-house/production/stripe-secret-key (SecureString)
 # - /dink-house/production/stripe-webhook-secret (SecureString)
 # - /dink-house/production/db-password (SecureString)
