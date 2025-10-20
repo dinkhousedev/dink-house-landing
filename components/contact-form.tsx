@@ -246,7 +246,9 @@ const ContactFormModal: React.FC<ContactFormModalProps> = ({
 
       if (result.errors) {
         setSubmitStatus("error");
-        setErrors({ submit: result.errors[0]?.message || "Failed to send message" });
+        setErrors({
+          submit: result.errors[0]?.message || "Failed to send message",
+        });
       } else if (result.data?.submitContact) {
         setSubmitStatus("success");
         // Clear localStorage on successful submission
