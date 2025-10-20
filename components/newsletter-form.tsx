@@ -73,7 +73,11 @@ export default function NewsletterForm() {
 
       if (result.errors) {
         const errorMessage = result.errors[0]?.message || "";
-        if (errorMessage.includes("already subscribed") || errorMessage.includes("duplicate")) {
+
+        if (
+          errorMessage.includes("already subscribed") ||
+          errorMessage.includes("duplicate")
+        ) {
           setMessage({
             type: "success",
             text: "You are already subscribed to our newsletter!",
@@ -96,7 +100,10 @@ export default function NewsletterForm() {
     } catch (error) {
       setMessage({
         type: "error",
-        text: error instanceof Error ? error.message : "Something went wrong. Please try again later.",
+        text:
+          error instanceof Error
+            ? error.message
+            : "Something went wrong. Please try again later.",
       });
     } finally {
       setLoading(false);

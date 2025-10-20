@@ -115,7 +115,10 @@ const WaitlistModal: React.FC<WaitlistModalProps> = ({ isOpen, onClose }) => {
         // Check if the error is due to duplicate subscription
         const errorMessage = result.errors[0]?.message || "";
 
-        if (errorMessage.includes("already subscribed") || errorMessage.includes("duplicate")) {
+        if (
+          errorMessage.includes("already subscribed") ||
+          errorMessage.includes("duplicate")
+        ) {
           setSubmitStatus("duplicate");
         } else {
           setSubmitStatus("error");
