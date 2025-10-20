@@ -107,7 +107,7 @@ export default function CampaignPage() {
         query: LIST_CAMPAIGNS,
       });
 
-      const campaignsData = campaignsResponse.data.listCampaigns;
+      const campaignsData = 'data' in campaignsResponse ? campaignsResponse.data.listCampaigns : null;
       logger.debug("Campaigns response:", campaignsData);
 
       setCampaigns(campaignsData || []);
@@ -117,7 +117,7 @@ export default function CampaignPage() {
         query: LIST_CONTRIBUTION_TIERS,
       });
 
-      const tiersData = tiersResponse.data.listContributionTiers;
+      const tiersData = 'data' in tiersResponse ? tiersResponse.data.listContributionTiers : null;
       logger.debug("Tiers response:", tiersData);
 
       const tiersByCampaign: Record<string, ContributionTier[]> = {};
@@ -182,7 +182,7 @@ export default function CampaignPage() {
         query: LIST_FOUNDERS,
       });
 
-      const data = response.data.listFounders;
+      const data = 'data' in response ? response.data.listFounders : null;
       logger.debug("Founders response:", data);
 
       setFounders(data || []);
