@@ -33,7 +33,7 @@ const nextConfig = {
       },
       {
         protocol: "https",
-        hostname: "dznfm70a0fusp.cloudfront.net",
+        hostname: "dpu7e3z5fb56y.cloudfront.net",
         pathname: "/media/**",
       },
     ],

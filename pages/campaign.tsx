@@ -7,11 +7,14 @@ import { Chip } from "@heroui/chip";
 import { Icon } from "@iconify/react";
 import Image from "next/image";
 import { LazyMotion, domAnimation, m } from "framer-motion";
+import { generateClient } from "aws-amplify/api";
 
 import DefaultLayout from "@/layouts/default";
 import ContributionModal from "@/components/ContributionModal";
 import { getCampaignImageUrl } from "@/config/media-urls";
 import { logger } from "@/lib/logger";
+import "@/lib/graphql-client";
+import { LIST_CAMPAIGNS, LIST_CONTRIBUTION_TIERS, LIST_FOUNDERS } from "@/lib/graphql-queries";
 
 interface CampaignType {
   id: string;
@@ -95,43 +98,62 @@ export default function CampaignPage() {
 
   const fetchCampaignData = async () => {
     try {
-      logger.info("Fetching campaigns from AWS RDS...");
+      logger.info("Fetching campaigns from AWS AppSync GraphQL...");
 
-      // Fetch campaigns from Next.js API route (which calls AWS Lambda)
-      const campaignsResponse = await fetch("/api/campaigns");
+      const client = generateClient();
 
-      if (!campaignsResponse.ok) {
-        throw new Error(
-          `Failed to fetch campaigns: ${campaignsResponse.statusText}`,
-        );
-      }
-      const campaignsData = await campaignsResponse.json();
+      // Fetch campaigns using GraphQL
+      const campaignsResponse = await client.graphql({
+        query: LIST_CAMPAIGNS,
+      });
 
+      const campaignsData = campaignsResponse.data.listCampaigns;
       logger.debug("Campaigns response:", campaignsData);
 
       setCampaigns(campaignsData || []);
 
-      // Fetch contribution tiers
-      const tiersResponse = await fetch("/api/contribution-tiers");
+      // Fetch contribution tiers using GraphQL
+      const tiersResponse = await client.graphql({
+        query: LIST_CONTRIBUTION_TIERS,
+      });
 
-      if (!tiersResponse.ok) {
-        throw new Error(`Failed to fetch tiers: ${tiersResponse.statusText}`);
-      }
-      const tiersData = await tiersResponse.json();
-
+      const tiersData = tiersResponse.data.listContributionTiers;
       logger.debug("Tiers response:", tiersData);
 
       const tiersByCampaign: Record<string, ContributionTier[]> = {};
 
-      (tiersData || []).forEach((tier: ContributionTier) => {
+      (tiersData || []).forEach((tier: any) => {
         if (!tiersByCampaign[tier.campaign_type_id]) {
           tiersByCampaign[tier.campaign_type_id] = [];
         }
+
+        // Parse benefits if it's a JSON string
+        let parsedBenefits = tier.benefits;
+        if (typeof tier.benefits === 'string') {
+          try {
+            parsedBenefits = JSON.parse(tier.benefits);
+          } catch (e) {
+            logger.warn("Failed to parse benefits:", e);
+            parsedBenefits = [];
+          }
+        }
+
+        // Convert benefits array to expected format
+        const benefits = Array.isArray(parsedBenefits)
+          ? parsedBenefits.map((b: any) =>
+              typeof b === 'string' ? { text: b } : b
+            )
+          : [];
+
         // Debug: Log first tier's benefits
         if (Object.keys(tiersByCampaign).length === 0) {
-          logger.debug("First tier benefits:", tier.benefits);
+          logger.debug("First tier benefits:", benefits);
         }
-        tiersByCampaign[tier.campaign_type_id].push(tier);
+
+        tiersByCampaign[tier.campaign_type_id].push({
+          ...tier,
+          benefits,
+        });
       });
 
       setTiers(tiersByCampaign);
@@ -141,7 +163,7 @@ export default function CampaignPage() {
         "First 3 tier IDs:",
         tiersData
           ?.slice(0, 3)
-          .map((t: ContributionTier) => ({ id: t.id, name: t.name })),
+          .map((t: any) => ({ id: t.id, name: t.name })),
       );
     } catch (error) {
       logger.error("Error fetching campaign data:", error);
@@ -152,15 +174,15 @@ export default function CampaignPage() {
 
   const fetchFounders = async () => {
     try {
-      logger.info("Fetching founders from AWS RDS...");
+      logger.info("Fetching founders from AWS AppSync GraphQL...");
 
-      const response = await fetch("/api/founders");
+      const client = generateClient();
 
-      if (!response.ok) {
-        throw new Error(`Failed to fetch founders: ${response.statusText}`);
-      }
-      const data = await response.json();
+      const response = await client.graphql({
+        query: LIST_FOUNDERS,
+      });
 
+      const data = response.data.listFounders;
       logger.debug("Founders response:", data);
 
       setFounders(data || []);
