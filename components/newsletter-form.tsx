@@ -2,9 +2,9 @@
 
 import React, { useState } from "react";
 
-import { submitNewsletterSignup } from "@/lib/api";
-
 export default function NewsletterForm() {
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [acceptNotifications, setAcceptNotifications] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -29,27 +29,74 @@ export default function NewsletterForm() {
     setMessage(null);
 
     try {
-      const result = await submitNewsletterSignup({ email });
+      // Use GraphQL API instead of REST API
+      const APPSYNC_API_URL = process.env.NEXT_PUBLIC_APPSYNC_API_URL;
+      const APPSYNC_API_KEY = process.env.NEXT_PUBLIC_APPSYNC_API_KEY;
 
-      if (result.success) {
-        if (result.already_subscribed) {
+      if (!APPSYNC_API_URL || !APPSYNC_API_KEY) {
+        throw new Error("API configuration is missing");
+      }
+
+      const mutation = `
+        mutation SubscribeNewsletter($input: SubscribeNewsletterInput!) {
+          subscribeNewsletter(input: $input) {
+            id
+            email
+            firstName
+            lastName
+            name
+            status
+            subscribed_at
+          }
+        }
+      `;
+
+      const response = await fetch(APPSYNC_API_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": APPSYNC_API_KEY,
+        },
+        body: JSON.stringify({
+          query: mutation,
+          variables: {
+            input: {
+              email: email.trim().toLowerCase(),
+              firstName: firstName.trim(),
+              lastName: lastName.trim(),
+            },
+          },
+        }),
+      });
+
+      const result = await response.json();
+
+      if (result.errors) {
+        const errorMessage = result.errors[0]?.message || "";
+        if (errorMessage.includes("already subscribed") || errorMessage.includes("duplicate")) {
           setMessage({
             type: "success",
             text: "You are already subscribed to our newsletter!",
           });
         } else {
-          setMessage({
-            type: "success",
-            text: "Welcome to The Dink House! 🎾 Check your email for updates on our launch.",
-          });
-          setEmail("");
-          setAcceptNotifications(false);
+          throw new Error(errorMessage);
         }
+      } else if (result.data?.subscribeNewsletter) {
+        setMessage({
+          type: "success",
+          text: "Welcome to The Dink House! 🎾 Check your email for updates on our launch.",
+        });
+        setFirstName("");
+        setLastName("");
+        setEmail("");
+        setAcceptNotifications(false);
+      } else {
+        throw new Error("Failed to subscribe");
       }
-    } catch {
+    } catch (error) {
       setMessage({
         type: "error",
-        text: "Something went wrong. Please try again later.",
+        text: error instanceof Error ? error.message : "Something went wrong. Please try again later.",
       });
     } finally {
       setLoading(false);
@@ -67,6 +114,26 @@ export default function NewsletterForm() {
       </p>
 
       <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <input
+            required
+            className="flex-1 px-4 py-3 border-2 border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#B3FF00] focus:border-[#B3FF00] transition-all"
+            disabled={loading}
+            placeholder="First Name"
+            type="text"
+            value={firstName}
+            onChange={(e) => setFirstName(e.target.value)}
+          />
+          <input
+            required
+            className="flex-1 px-4 py-3 border-2 border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#B3FF00] focus:border-[#B3FF00] transition-all"
+            disabled={loading}
+            placeholder="Last Name"
+            type="text"
+            value={lastName}
+            onChange={(e) => setLastName(e.target.value)}
+          />
+        </div>
         <div className="flex flex-col sm:flex-row gap-3">
           <input
             required

@@ -1,4 +1,5 @@
 import { logger } from "./logger";
+import { getLogoUrl } from "@/config/media-urls";
 
 interface SendEmailParams {
   to: string;
@@ -94,6 +95,9 @@ export function generateContributionEmailHTML(data: {
     site_url = "https://thedinkhouse.com",
   } = data;
 
+  // Use centralized media URL configuration
+  const logoUrl = getLogoUrl("dinklogo.jpg");
+
   return `
 <!DOCTYPE html>
 <html>
@@ -102,6 +106,7 @@ export function generateContributionEmailHTML(data: {
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0; background-color: #f4f4f4; }
     .container { max-width: 600px; margin: 20px auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
     .header { background: linear-gradient(135deg, #B3FF00 0%, #9BCF00 100%); padding: 40px 30px; text-align: center; }
+    .header img { max-width: 180px; height: auto; margin-bottom: 20px; }
     .header h1 { color: #000000; margin: 0; font-size: 28px; font-weight: 700; }
     .content { padding: 40px 30px; }
     .receipt-box { background: #f8f8f8; padding: 20px; border-radius: 6px; margin: 20px 0; }
@@ -117,6 +122,7 @@ export function generateContributionEmailHTML(data: {
 <body>
   <div class="container">
     <div class="header">
+      <img src="${logoUrl}" alt="The Dink House" />
       <h1>Thank You for Your Contribution!</h1>
     </div>
     <div class="content">
