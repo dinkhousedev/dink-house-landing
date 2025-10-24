@@ -86,7 +86,12 @@ export default function ContributionModal({
       // Validate custom amount if applicable
       let amountValue: number | undefined;
 
-      if (allowsCustomAmount && customAmount) {
+      if (allowsCustomAmount) {
+        if (!customAmount || customAmount.trim() === "") {
+          throw new Error(
+            `Please enter a contribution amount (minimum $${minAmount})`,
+          );
+        }
         amountValue = parseFloat(customAmount);
         if (isNaN(amountValue) || amountValue < minAmount) {
           throw new Error(
@@ -235,13 +240,15 @@ export default function ContributionModal({
                   className="block text-sm font-semibold text-gray-300 mb-3"
                   htmlFor={amountInputId}
                 >
-                  Choose Your Contribution Amount
+                  Choose Your Contribution Amount <span className="text-red-500">*</span>
                 </label>
                 <Input
+                  isRequired
                   classNames={{
                     input: "bg-gray-800 text-white text-lg",
                     inputWrapper: "bg-gray-800 border-gray-700",
                   }}
+                  id={amountInputId}
                   min={minAmount}
                   placeholder={`Minimum $${minAmount}`}
                   startContent={
