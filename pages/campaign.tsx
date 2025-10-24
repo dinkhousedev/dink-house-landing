@@ -125,9 +125,6 @@ export default function CampaignPage() {
           ? tiersResponse.data.listContributionTiers
           : null;
 
-      // Set campaigns
-      setCampaigns(campaigns);
-
       // Group tiers by campaign
       const tiersByCampaign: Record<string, ContributionTier[]> = {};
 
