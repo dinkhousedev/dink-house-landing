@@ -18,6 +18,10 @@ const nextConfig = {
     SITE_URL: process.env.SITE_URL,
     RATE_LIMIT_PER_MINUTE: process.env.RATE_LIMIT_PER_MINUTE,
     RATE_LIMIT_PER_HOUR: process.env.RATE_LIMIT_PER_HOUR,
+    NEXT_PUBLIC_APPSYNC_API_URL: process.env.NEXT_PUBLIC_APPSYNC_API_URL,
+    NEXT_PUBLIC_APPSYNC_API_KEY: process.env.NEXT_PUBLIC_APPSYNC_API_KEY,
+    NEXT_PUBLIC_APPSYNC_REGION: process.env.NEXT_PUBLIC_APPSYNC_REGION,
+    NEXT_PUBLIC_AWS_API_URL: process.env.NEXT_PUBLIC_AWS_API_URL,
   },
   images: {
     remotePatterns: [
@@ -48,7 +52,7 @@ const nextConfig = {
           }
         : false,
   },
-  swcMinify: true,
+  // swcMinify is now enabled by default in Next.js 13+, no need to specify
   poweredByHeader: false,
 };
 
