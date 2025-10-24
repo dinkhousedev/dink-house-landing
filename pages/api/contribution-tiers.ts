@@ -45,7 +45,7 @@ export default async function handler(
         metadata,
         created_at,
         updated_at
-      FROM public.contribution_tiers
+      FROM crowdfunding.contribution_tiers
       WHERE is_active = true
     `;
 

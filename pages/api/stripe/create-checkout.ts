@@ -76,8 +76,8 @@ export default async function handler(
         ct.name as campaign_type_name,
         ct.slug as campaign_type_slug,
         ct.description as campaign_type_description
-      FROM public.contribution_tiers t
-      JOIN public.campaign_types ct ON t.campaign_type_id = ct.id
+      FROM crowdfunding.contribution_tiers t
+      JOIN crowdfunding.campaign_types ct ON t.campaign_type_id = ct.id
       WHERE t.id = $1
       `,
       [tierId],
@@ -135,7 +135,7 @@ export default async function handler(
     const existingBackerResult = await callFunction<{
       id: string;
       stripe_customer_id: string | null;
-    }>("public.get_backer_by_email", {
+    }>("crowdfunding.get_backer_by_email", {
       p_email: email.toLowerCase(),
     });
 
@@ -166,7 +166,7 @@ export default async function handler(
     const checkoutResult = await callFunction<{
       backer_id: string;
       contribution_id: string;
-    }>("public.create_checkout_contribution", {
+    }>("crowdfunding.create_checkout_contribution", {
       p_email: email.toLowerCase(),
       p_first_name: firstName,
       p_last_initial: lastInitial,
@@ -234,7 +234,7 @@ export default async function handler(
     });
 
     // Update contribution with session ID
-    await callFunction("public.update_contribution_session", {
+    await callFunction("crowdfunding.update_contribution_session", {
       p_contribution_id: contribution.id,
       p_session_id: session.id,
     });

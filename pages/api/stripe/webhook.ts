@@ -172,7 +172,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     try {
       // Get backer details for email
       const backerResult = await client.query(
-        `SELECT email, first_name FROM public.backers WHERE id = $1`,
+        `SELECT email, first_name FROM crowdfunding.backers WHERE id = $1`,
         [backerId],
       );
 
@@ -185,7 +185,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 
         if (contribution.tier_id) {
           const tierResult = await client.query(
-            `SELECT name FROM public.contribution_tiers WHERE id = $1`,
+            `SELECT name FROM crowdfunding.contribution_tiers WHERE id = $1`,
             [contribution.tier_id],
           );
 
@@ -234,7 +234,7 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 
     if (contribution && contribution.amount >= 1000 && backerId) {
       const backerResult = await client.query(
-        `SELECT first_name, last_initial FROM public.backers WHERE id = $1`,
+        `SELECT first_name, last_initial FROM crowdfunding.backers WHERE id = $1`,
         [backerId],
       );
 
@@ -314,7 +314,7 @@ async function handleChargeRefunded(charge: Stripe.Charge) {
 
     // Find contribution
     const contributionResult = await client.query(
-      `SELECT id FROM public.contributions WHERE stripe_charge_id = $1`,
+      `SELECT id FROM crowdfunding.contributions WHERE stripe_charge_id = $1`,
       [charge.id],
     );
 
