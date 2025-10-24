@@ -36,7 +36,14 @@ FROM_EMAIL=hello@dinkhousepb.com
 
 ### Application URLs
 ```
-SITE_URL=https://app.dinkhouse.com
+SITE_URL=https://dinkhousepb.com
+NEXT_PUBLIC_SITE_URL=https://dinkhousepb.com
+```
+
+### Media Storage (CloudFront CDN)
+```
+NEXT_PUBLIC_CLOUDFRONT_URL=https://d1a058opxsfz0y.cloudfront.net
+NEXT_PUBLIC_MEDIA_BUCKET=dink-house-aws-prod-storagebucket-xgdw79dw9won
 ```
 
 ### Rate Limiting
