@@ -14,11 +14,7 @@ import ContributionModal from "@/components/ContributionModal";
 import { getCampaignImageUrl } from "@/config/media-urls";
 import { logger } from "@/lib/logger";
 import "@/lib/graphql-client";
-import {
-  LIST_CAMPAIGNS,
-  LIST_CONTRIBUTION_TIERS,
-  LIST_FOUNDERS,
-} from "@/lib/graphql-queries";
+import { LIST_CAMPAIGNS, LIST_CONTRIBUTION_TIERS } from "@/lib/graphql-queries";
 
 interface CampaignType {
   id: string;
@@ -190,20 +186,19 @@ export default function CampaignPage() {
   // Fallback: REST API version (kept for compatibility)
   const fetchCampaignDataREST = async () => {
     try {
-      logger.info("Fetching founders from AWS AppSync GraphQL...");
+      logger.info("Fetching data from REST API...");
 
-      const client = generateClient();
-
-      const response = await client.graphql({
-        query: LIST_FOUNDERS,
-      });
-
-      const data = "data" in response ? response.data.listFounders : null;
+      const [campaignsResponse, tiersResponse, foundersResponse] =
+        await Promise.all([
+          fetch("/api/campaigns"),
+          fetch("/api/contribution-tiers"),
+          fetch("/api/founders"),
+        ]);
 
       const [campaignsData, tiersData, foundersData] = await Promise.all([
         campaignsResponse.json(),
         tiersResponse.json(),
-        foundersData.json(),
+        foundersResponse.json(),
       ]);
 
       setCampaigns(campaignsData || []);

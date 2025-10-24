@@ -14,8 +14,7 @@ Amplify.configure({
         "https://qrscofg4tfevrhi7dfgjc5zqai.appsync-api.us-west-1.amazonaws.com/graphql",
       region: process.env.NEXT_PUBLIC_COGNITO_REGION || "us-west-1",
       defaultAuthMode: "apiKey",
-      apiKey:
-        process.env.NEXT_PUBLIC_APPSYNC_API_KEY || "da2-fakeApiKey123456",
+      apiKey: process.env.NEXT_PUBLIC_APPSYNC_API_KEY || "da2-fakeApiKey123456",
     },
   },
 });
