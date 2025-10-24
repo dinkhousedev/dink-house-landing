@@ -1,4 +1,5 @@
 import { logger } from "./logger";
+
 import { getLogoUrl } from "@/config/media-urls";
 
 interface SendEmailParams {

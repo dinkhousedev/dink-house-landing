@@ -14,7 +14,11 @@ import ContributionModal from "@/components/ContributionModal";
 import { getCampaignImageUrl } from "@/config/media-urls";
 import { logger } from "@/lib/logger";
 import "@/lib/graphql-client";
-import { LIST_CAMPAIGNS, LIST_CONTRIBUTION_TIERS, LIST_FOUNDERS } from "@/lib/graphql-queries";
+import {
+  LIST_CAMPAIGNS,
+  LIST_CONTRIBUTION_TIERS,
+  LIST_FOUNDERS,
+} from "@/lib/graphql-queries";
 
 interface CampaignType {
   id: string;
@@ -107,7 +111,11 @@ export default function CampaignPage() {
         query: LIST_CAMPAIGNS,
       });
 
-      const campaignsData = campaignsResponse.data.listCampaigns;
+      const campaignsData =
+        "data" in campaignsResponse
+          ? campaignsResponse.data.listCampaigns
+          : null;
+
       logger.debug("Campaigns response:", campaignsData);
 
       setCampaigns(campaignsData || []);
@@ -117,7 +125,11 @@ export default function CampaignPage() {
         query: LIST_CONTRIBUTION_TIERS,
       });
 
-      const tiersData = tiersResponse.data.listContributionTiers;
+      const tiersData =
+        "data" in tiersResponse
+          ? tiersResponse.data.listContributionTiers
+          : null;
+
       logger.debug("Tiers response:", tiersData);
 
       const tiersByCampaign: Record<string, ContributionTier[]> = {};
@@ -129,7 +141,8 @@ export default function CampaignPage() {
 
         // Parse benefits if it's a JSON string
         let parsedBenefits = tier.benefits;
-        if (typeof tier.benefits === 'string') {
+
+        if (typeof tier.benefits === "string") {
           try {
             parsedBenefits = JSON.parse(tier.benefits);
           } catch (e) {
@@ -141,7 +154,7 @@ export default function CampaignPage() {
         // Convert benefits array to expected format
         const benefits = Array.isArray(parsedBenefits)
           ? parsedBenefits.map((b: any) =>
-              typeof b === 'string' ? { text: b } : b
+              typeof b === "string" ? { text: b } : b,
             )
           : [];
 
@@ -161,9 +174,7 @@ export default function CampaignPage() {
       logger.debug("Tiers loaded:", tiersData?.length);
       logger.debug(
         "First 3 tier IDs:",
-        tiersData
-          ?.slice(0, 3)
-          .map((t: any) => ({ id: t.id, name: t.name })),
+        tiersData?.slice(0, 3).map((t: any) => ({ id: t.id, name: t.name })),
       );
     } catch (error) {
       logger.error("Error fetching campaign data:", error);
@@ -182,7 +193,8 @@ export default function CampaignPage() {
         query: LIST_FOUNDERS,
       });
 
-      const data = response.data.listFounders;
+      const data = "data" in response ? response.data.listFounders : null;
+
       logger.debug("Founders response:", data);
 
       setFounders(data || []);
