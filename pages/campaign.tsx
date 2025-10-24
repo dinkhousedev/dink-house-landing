@@ -38,10 +38,6 @@ interface ContributionTier {
   current_backers: number;
   max_backers: number | null;
   display_order: number;
-  metadata?: {
-    allows_custom_amount?: boolean;
-    min_amount?: number;
-  };
 }
 
 interface FounderEntry {
@@ -597,19 +593,12 @@ export default function CampaignPage() {
                           {tier.name}
                         </div>
                         <div className="text-dink-lime font-bold text-lg">
-                          {tier.metadata?.allows_custom_amount
-                            ? "Any"
-                            : formatCurrency(tier.amount)}
+                          {formatCurrency(tier.amount)}
                         </div>
                       </div>
                       <p className="text-sm text-gray-400 line-clamp-2">
                         {tier.description}
                       </p>
-                      {tier.metadata?.allows_custom_amount && (
-                        <p className="text-xs text-dink-lime mt-2">
-                          Min: ${tier.metadata.min_amount}
-                        </p>
-                      )}
                     </button>
                   ))}
                 </div>

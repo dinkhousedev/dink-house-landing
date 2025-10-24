@@ -22,10 +22,6 @@ interface ContributionTier {
   amount: number;
   description: string;
   benefits: Array<{ text: string }>;
-  metadata?: {
-    allows_custom_amount?: boolean;
-    min_amount?: number;
-  };
 }
 
 interface ContributionModalProps {
@@ -51,13 +47,8 @@ export default function ContributionModal({
     isPublic: true,
     showAmount: true,
   });
-  const [customAmount, setCustomAmount] = useState<string>("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const amountInputId = useId();
-
-  const allowsCustomAmount = tier.metadata?.allows_custom_amount === true;
-  const minAmount = tier.metadata?.min_amount || 5;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -83,23 +74,6 @@ export default function ContributionModal({
         throw new Error("Email is required");
       }
 
-      // Validate custom amount if applicable
-      let amountValue: number | undefined;
-
-      if (allowsCustomAmount) {
-        if (!customAmount || customAmount.trim() === "") {
-          throw new Error(
-            `Please enter a contribution amount (minimum $${minAmount})`,
-          );
-        }
-        amountValue = parseFloat(customAmount);
-        if (isNaN(amountValue) || amountValue < minAmount) {
-          throw new Error(
-            `Please enter a valid amount (minimum $${minAmount})`,
-          );
-        }
-      }
-
       // Create checkout session - use AWS API
       const awsApiUrl = process.env.NEXT_PUBLIC_AWS_API_URL || "";
 
@@ -114,7 +88,7 @@ export default function ContributionModal({
         lastInitial: formData.lastInitial.trim().toUpperCase(),
         campaignTypeId: tier.campaign_type_id,
         tierId: tier.id,
-        amount: amountValue || tier.amount,
+        amount: tier.amount,
         phone: formData.phone.trim() || undefined,
         city: formData.city.trim() || undefined,
         state: formData.state.trim().toUpperCase() || undefined,
@@ -199,11 +173,7 @@ export default function ContributionModal({
                 size="lg"
                 variant="flat"
               >
-                {allowsCustomAmount && customAmount
-                  ? formatCurrency(parseFloat(customAmount))
-                  : allowsCustomAmount
-                    ? "Custom"
-                    : formatCurrency(tier.amount)}
+                {formatCurrency(tier.amount)}
               </Chip>
             </div>
             <p className="text-sm text-gray-400 font-normal">
@@ -232,41 +202,6 @@ export default function ContributionModal({
                 ))}
               </div>
             </div>
-
-            {/* Custom Amount Input */}
-            {allowsCustomAmount && (
-              <div className="mb-6 p-4 bg-dink-lime/5 border-2 border-dink-lime/30 rounded-lg">
-                <label
-                  className="block text-sm font-semibold text-gray-300 mb-3"
-                  htmlFor={amountInputId}
-                >
-                  Choose Your Contribution Amount <span className="text-red-500">*</span>
-                </label>
-                <Input
-                  isRequired
-                  classNames={{
-                    input: "bg-gray-800 text-white text-lg",
-                    inputWrapper: "bg-gray-800 border-gray-700",
-                  }}
-                  id={amountInputId}
-                  min={minAmount}
-                  placeholder={`Minimum $${minAmount}`}
-                  startContent={
-                    <div className="pointer-events-none flex items-center">
-                      <span className="text-gray-400 text-sm">$</span>
-                    </div>
-                  }
-                  step="0.01"
-                  type="number"
-                  value={customAmount}
-                  onChange={(e) => setCustomAmount(e.target.value)}
-                />
-                <p className="text-xs text-gray-500 mt-2">
-                  Enter any amount ${minAmount} or more. Every dollar helps
-                  equip our community.
-                </p>
-              </div>
-            )}
 
             {/* Form Fields */}
             <div className="space-y-4">

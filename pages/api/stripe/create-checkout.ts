@@ -19,7 +19,6 @@ interface CreateCheckoutRequest {
   state?: string;
   isPublic?: boolean;
   showAmount?: boolean;
-  customAmount?: number;
 }
 
 interface ApiResponse {
@@ -51,7 +50,6 @@ export default async function handler(
       state,
       isPublic = true,
       showAmount = true,
-      customAmount,
     } = req.body as CreateCheckoutRequest;
 
     // Validate required fields
@@ -107,26 +105,7 @@ export default async function handler(
       });
     }
 
-    // Determine final amount (custom or tier amount)
-    let finalAmount = tier.amount;
-    const allowsCustomAmount = tier.metadata?.allows_custom_amount === true;
-    const minAmount = tier.metadata?.min_amount || 5;
-
-    if (customAmount !== undefined && customAmount !== null) {
-      if (!allowsCustomAmount) {
-        return res.status(400).json({
-          success: false,
-          error: "This tier does not support custom amounts",
-        });
-      }
-      if (customAmount < minAmount) {
-        return res.status(400).json({
-          success: false,
-          error: `Minimum donation amount is $${minAmount}`,
-        });
-      }
-      finalAmount = customAmount;
-    }
+    const finalAmount = tier.amount;
 
     // Create or get Stripe customer
     let stripeCustomerId: string | undefined;
@@ -207,7 +186,7 @@ export default async function handler(
           price_data: {
             currency: "usd",
             product_data: {
-              name: customAmount ? `${tier.name} - Custom Amount` : tier.name,
+              name: tier.name,
               description:
                 tier.description || `Support ${tier.campaign_type_name}`,
             },
