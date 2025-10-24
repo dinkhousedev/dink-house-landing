@@ -78,8 +78,7 @@ export default function CampaignPage() {
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
 
   useEffect(() => {
-    fetchCampaignData();
-    fetchFounders();
+    fetchAllCampaignData();
   }, []);
 
   // Check for successful payment redirect
@@ -87,8 +86,7 @@ export default function CampaignPage() {
     if (router.query.success === "true") {
       setShowSuccessMessage(true);
       // Refresh data to show updated amounts
-      fetchCampaignData();
-      fetchFounders();
+      fetchAllCampaignData();
       // Clean up URL after 500ms
       setTimeout(() => {
         router.replace("/campaign", undefined, { shallow: true });
@@ -100,7 +98,8 @@ export default function CampaignPage() {
     }
   }, [router.query]);
 
-  const fetchCampaignData = async () => {
+  // Fetch all campaign data using GraphQL (single query!)
+  const fetchAllCampaignData = async () => {
     try {
       logger.info("Fetching campaigns from AWS AppSync GraphQL...");
 
@@ -130,8 +129,10 @@ export default function CampaignPage() {
           ? tiersResponse.data.listContributionTiers
           : null;
 
-      logger.debug("Tiers response:", tiersData);
+      // Set campaigns
+      setCampaigns(campaigns);
 
+      // Group tiers by campaign
       const tiersByCampaign: Record<string, ContributionTier[]> = {};
 
       (tiersData || []).forEach((tier: any) => {
@@ -177,13 +178,17 @@ export default function CampaignPage() {
         tiersData?.slice(0, 3).map((t: any) => ({ id: t.id, name: t.name })),
       );
     } catch (error) {
-      logger.error("Error fetching campaign data:", error);
+      logger.error("Error fetching campaign data from GraphQL:", error);
+      // Fallback to REST API if GraphQL fails
+      logger.warn("Falling back to REST API...");
+      await fetchCampaignDataREST();
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchFounders = async () => {
+  // Fallback: REST API version (kept for compatibility)
+  const fetchCampaignDataREST = async () => {
     try {
       logger.info("Fetching founders from AWS AppSync GraphQL...");
 
@@ -195,11 +200,27 @@ export default function CampaignPage() {
 
       const data = "data" in response ? response.data.listFounders : null;
 
-      logger.debug("Founders response:", data);
+      const [campaignsData, tiersData, foundersData] = await Promise.all([
+        campaignsResponse.json(),
+        tiersResponse.json(),
+        foundersData.json(),
+      ]);
 
-      setFounders(data || []);
+      setCampaigns(campaignsData || []);
+
+      const tiersByCampaign: Record<string, ContributionTier[]> = {};
+
+      (tiersData || []).forEach((tier: ContributionTier) => {
+        if (!tiersByCampaign[tier.campaign_type_id]) {
+          tiersByCampaign[tier.campaign_type_id] = [];
+        }
+        tiersByCampaign[tier.campaign_type_id].push(tier);
+      });
+
+      setTiers(tiersByCampaign);
+      setFounders(foundersData || []);
     } catch (error) {
-      logger.error("Error fetching founders:", error);
+      logger.error("Error fetching campaign data from REST:", error);
     }
   };
 
@@ -219,8 +240,7 @@ export default function CampaignPage() {
   };
 
   const handleContributionSuccess = () => {
-    fetchCampaignData();
-    fetchFounders();
+    fetchAllCampaignData();
   };
 
   const formatCurrency = (amount: number) => {

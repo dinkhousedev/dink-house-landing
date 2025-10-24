@@ -1,20 +1,11 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 
-import { Pool } from "pg";
-
 import { logger } from "@/lib/logger";
 
-// Create PostgreSQL connection pool
-const pool = new Pool({
-  host: process.env.DB_HOST,
-  port: parseInt(process.env.DB_PORT || "5432"),
-  database: process.env.DB_NAME || "dink_house",
-  user: process.env.DB_USER || "postgres",
-  password: process.env.DB_PASSWORD,
-  ssl: process.env.DB_SSL === "true" ? { rejectUnauthorized: false } : false,
-  max: 5,
-  idleTimeoutMillis: 30000,
-});
+// Backend API URL from environment
+const BACKEND_API_URL =
+  process.env.NEXT_PUBLIC_API_URL ||
+  "https://z5afj0ni48.execute-api.us-west-1.amazonaws.com/prod";
 
 export default async function handler(
   req: NextApiRequest,
@@ -25,42 +16,32 @@ export default async function handler(
   }
 
   try {
-    logger.info("Fetching campaigns from database...", {
-      host: process.env.DB_HOST ? "***configured***" : "MISSING",
-      database: process.env.DB_NAME || "dink_house",
+    logger.info("Fetching campaigns from backend API...", {
+      backendUrl: BACKEND_API_URL,
     });
 
-    const result = await pool.query(
-      `SELECT
-        id,
-        name,
-        slug,
-        description,
-        goal_amount,
-        current_amount,
-        backer_count,
-        display_order,
-        metadata,
-        created_at,
-        updated_at
-      FROM public.campaign_types
-      WHERE is_active = true
-      ORDER BY display_order ASC`,
-    );
+    const response = await fetch(`${BACKEND_API_URL}/campaigns`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
 
-    logger.info(`Successfully fetched ${result.rows.length} campaigns`);
-    res.status(200).json(result.rows);
+    if (!response.ok) {
+      throw new Error(`Backend API returned ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    logger.info(`Successfully fetched ${data.length || 0} campaigns`);
+    res.status(200).json(data);
   } catch (error: any) {
     logger.error("Error fetching campaigns:", {
       message: error.message,
-      code: error.code,
-      detail: error.detail,
-      hint: error.hint,
     });
     res.status(500).json({
       error: "Failed to fetch campaigns",
       details: error.message,
-      code: error.code,
     });
   }
 }

@@ -54,6 +54,15 @@ const nextConfig = {
   },
   // swcMinify is now enabled by default in Next.js 13+, no need to specify
   poweredByHeader: false,
+  // Disable source maps in production for security and performance
+  productionBrowserSourceMaps: false,
+  // Optimize production output
+  output: "standalone",
+  // Disable x-powered-by header
+  generateBuildId: async () => {
+    // Use commit hash or timestamp for production builds
+    return process.env.BUILD_ID || `build-${Date.now()}`;
+  },
 };
 
 module.exports = nextConfig;
