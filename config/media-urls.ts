@@ -7,7 +7,7 @@
  */
 export const CLOUDFRONT_URL =
   process.env.NEXT_PUBLIC_CLOUDFRONT_URL ||
-  "https://dznfm70a0fusp.cloudfront.net";
+  "https://dpu7e3z5fb56y.cloudfront.net";
 
 /**
  * Base paths for different media types
