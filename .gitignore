@@ -46,3 +46,4 @@ bun.lockb
 .env.example
 AMPLIFY_ENV_VARS.md
 .env.production
+.env.production

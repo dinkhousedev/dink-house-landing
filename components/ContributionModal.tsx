@@ -13,6 +13,7 @@ import { Chip } from "@heroui/chip";
 import { Icon } from "@iconify/react";
 
 import { logger } from "@/lib/logger";
+import { formatBenefit } from "@/lib/format-benefits";
 
 interface ContributionTier {
   id: string;
@@ -220,7 +221,7 @@ export default function ContributionModal({
                       width={20}
                     />
                     <span className="text-sm text-gray-400">
-                      {benefit.text}
+                      {formatBenefit(benefit)}
                     </span>
                   </div>
                 ))}

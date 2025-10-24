@@ -13,6 +13,7 @@ import DefaultLayout from "@/layouts/default";
 import ContributionModal from "@/components/ContributionModal";
 import { getCampaignImageUrl } from "@/config/media-urls";
 import { logger } from "@/lib/logger";
+import { formatBenefit } from "@/lib/format-benefits";
 import "@/lib/graphql-client";
 import { LIST_CAMPAIGNS, LIST_CONTRIBUTION_TIERS } from "@/lib/graphql-queries";
 
@@ -757,7 +758,7 @@ export default function CampaignPage() {
                                         width={18}
                                       />
                                       <span className="text-gray-300">
-                                        {benefit.text}
+                                        {formatBenefit(benefit)}
                                       </span>
                                     </div>
                                   ))}

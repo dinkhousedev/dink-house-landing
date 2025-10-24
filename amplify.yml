@@ -111,11 +111,20 @@ frontend:
 # - SITE_URL=<site-url>
 # - NEXT_PUBLIC_SITE_URL=<site-url>
 # - NEXT_PUBLIC_AWS_API_URL=<api-gateway-url>
-# - BACKEND_API_URL=<api-gateway-url>
+# - AWS_API_URL=<api-gateway-url>
 # - NEXT_PUBLIC_CLOUDFRONT_URL=<cloudfront-url>
 # - NEXT_PUBLIC_MEDIA_BUCKET=<s3-bucket-name>
 # - RATE_LIMIT_PER_MINUTE=<rate-limit>
 # - RATE_LIMIT_PER_HOUR=<rate-limit>
+#
+# AWS APPSYNC GRAPHQL API (Required for newsletter/waitlist signup):
+# - NEXT_PUBLIC_APPSYNC_API_URL=https://swszcyfekzd4rcyhulnj7ud5vy.appsync-api.us-east-2.amazonaws.com/graphql
+# - NEXT_PUBLIC_APPSYNC_API_KEY=<appsync-api-key>
+# - NEXT_PUBLIC_APPSYNC_REGION=us-east-2
+#
+# SUPABASE (Required for newsletter resubscribe):
+# - NEXT_PUBLIC_SUPABASE_URL=https://api.dinkhousepb.com
+# - NEXT_PUBLIC_SUPABASE_ANON_KEY=<supabase-anon-key>
 #
 # ADDITIONAL VARIABLES FOR NON-PRODUCTION BRANCHES (Staging/Dev only):
 # These are NOT needed for production (fetched from SSM instead):
