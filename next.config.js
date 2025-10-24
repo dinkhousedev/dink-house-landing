@@ -40,6 +40,11 @@ const nextConfig = {
         hostname: "dpu7e3z5fb56y.cloudfront.net",
         pathname: "/media/**",
       },
+      {
+        protocol: "https",
+        hostname: "d1a058opxsfz0y.cloudfront.net",
+        pathname: "/media/**",
+      },
     ],
   },
   // Production optimizations - automatically strips console.log in production builds
