@@ -4,7 +4,8 @@ import { logger } from "@/lib/logger";
 
 // Backend API URL from environment
 const BACKEND_API_URL =
-  process.env.NEXT_PUBLIC_API_URL ||
+  process.env.NEXT_PUBLIC_AWS_API_URL ||
+  process.env.AWS_API_URL ||
   "https://z5afj0ni48.execute-api.us-west-1.amazonaws.com/prod";
 
 export default async function handler(

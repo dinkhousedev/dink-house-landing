@@ -7,13 +7,13 @@
 
 import { Amplify } from "aws-amplify";
 
-// Only configure if we're in a browser environment and have the required env vars
-if (typeof window !== "undefined") {
-  const endpoint = process.env.NEXT_PUBLIC_APPSYNC_API_URL;
-  const apiKey = process.env.NEXT_PUBLIC_APPSYNC_API_KEY;
+const endpoint = process.env.NEXT_PUBLIC_APPSYNC_API_URL;
+const apiKey = process.env.NEXT_PUBLIC_APPSYNC_API_KEY;
 
-  if (endpoint && apiKey) {
-    Amplify.configure({
+// Configure Amplify once - this works in both server and client environments
+if (endpoint && apiKey) {
+  Amplify.configure(
+    {
       API: {
         GraphQL: {
           endpoint,
@@ -22,10 +22,12 @@ if (typeof window !== "undefined") {
           apiKey,
         },
       },
-    });
-  } else {
-    console.warn("AppSync configuration missing: endpoint or API key not found");
-  }
+    },
+    { ssr: true }, // Enable SSR support
+  );
+} else if (typeof window !== "undefined") {
+  // Only warn in the browser to avoid server-side log spam
+  console.warn("AppSync configuration missing: endpoint or API key not found");
 }
 
 export default Amplify;
