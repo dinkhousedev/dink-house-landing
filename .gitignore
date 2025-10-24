@@ -47,3 +47,4 @@ bun.lockb
 AMPLIFY_ENV_VARS.md
 .env.production
 .env.production
+next.config.js
