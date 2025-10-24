@@ -7,20 +7,18 @@ import { Chip } from "@heroui/chip";
 import { Icon } from "@iconify/react";
 import Image from "next/image";
 import { LazyMotion, domAnimation, m } from "framer-motion";
-import { graphqlOperation } from "aws-amplify/api";
+import { generateClient } from "aws-amplify/api";
 
 import DefaultLayout from "@/layouts/default";
 import ContributionModal from "@/components/ContributionModal";
 import { getCampaignImageUrl } from "@/config/media-urls";
 import { logger } from "@/lib/logger";
-import { graphqlClient } from "@/lib/graphql/client";
-import { GET_CAMPAIGN_DATA } from "@/lib/graphql/queries";
-import type {
-  Campaign,
-  ContributionTier as GraphQLTier,
-  Founder,
-  GetCampaignDataResponse,
-} from "@/lib/graphql/types";
+import "@/lib/graphql-client";
+import {
+  LIST_CAMPAIGNS,
+  LIST_CONTRIBUTION_TIERS,
+  LIST_FOUNDERS,
+} from "@/lib/graphql-queries";
 
 interface CampaignType {
   id: string;
@@ -103,16 +101,33 @@ export default function CampaignPage() {
   // Fetch all campaign data using GraphQL (single query!)
   const fetchAllCampaignData = async () => {
     try {
-      setLoading(true);
-      logger.info("Fetching campaign data from AppSync GraphQL...");
+      logger.info("Fetching campaigns from AWS AppSync GraphQL...");
 
-      const response = (await graphqlClient.graphql({
-        query: GET_CAMPAIGN_DATA,
-      })) as { data: GetCampaignDataResponse };
+      const client = generateClient();
 
-      const { campaigns, tiers: tiersList, founders } = response.data.getCampaignData;
+      // Fetch campaigns using GraphQL
+      const campaignsResponse = await client.graphql({
+        query: LIST_CAMPAIGNS,
+      });
 
-      logger.info(`GraphQL fetched: ${campaigns.length} campaigns, ${tiersList.length} tiers, ${founders.length} founders`);
+      const campaignsData =
+        "data" in campaignsResponse
+          ? campaignsResponse.data.listCampaigns
+          : null;
+
+      logger.debug("Campaigns response:", campaignsData);
+
+      setCampaigns(campaignsData || []);
+
+      // Fetch contribution tiers using GraphQL
+      const tiersResponse = await client.graphql({
+        query: LIST_CONTRIBUTION_TIERS,
+      });
+
+      const tiersData =
+        "data" in tiersResponse
+          ? tiersResponse.data.listContributionTiers
+          : null;
 
       // Set campaigns
       setCampaigns(campaigns);
@@ -120,23 +135,48 @@ export default function CampaignPage() {
       // Group tiers by campaign
       const tiersByCampaign: Record<string, ContributionTier[]> = {};
 
-      tiersList.forEach((tier: GraphQLTier) => {
+      (tiersData || []).forEach((tier: any) => {
         if (!tiersByCampaign[tier.campaign_type_id]) {
           tiersByCampaign[tier.campaign_type_id] = [];
         }
-        // Convert benefits from string[] to {text: string}[] for compatibility
-        const formattedTier: ContributionTier = {
-          ...tier,
-          benefits: tier.benefits.map((text) => ({ text })),
-        };
 
-        tiersByCampaign[tier.campaign_type_id].push(formattedTier);
+        // Parse benefits if it's a JSON string
+        let parsedBenefits = tier.benefits;
+
+        if (typeof tier.benefits === "string") {
+          try {
+            parsedBenefits = JSON.parse(tier.benefits);
+          } catch (e) {
+            logger.warn("Failed to parse benefits:", e);
+            parsedBenefits = [];
+          }
+        }
+
+        // Convert benefits array to expected format
+        const benefits = Array.isArray(parsedBenefits)
+          ? parsedBenefits.map((b: any) =>
+              typeof b === "string" ? { text: b } : b,
+            )
+          : [];
+
+        // Debug: Log first tier's benefits
+        if (Object.keys(tiersByCampaign).length === 0) {
+          logger.debug("First tier benefits:", benefits);
+        }
+
+        tiersByCampaign[tier.campaign_type_id].push({
+          ...tier,
+          benefits,
+        });
       });
 
       setTiers(tiersByCampaign);
-      setFounders(founders);
-
-      logger.debug("Campaign data loaded successfully");
+      logger.debug("Campaigns loaded:", campaignsData?.length);
+      logger.debug("Tiers loaded:", tiersData?.length);
+      logger.debug(
+        "First 3 tier IDs:",
+        tiersData?.slice(0, 3).map((t: any) => ({ id: t.id, name: t.name })),
+      );
     } catch (error) {
       logger.error("Error fetching campaign data from GraphQL:", error);
       // Fallback to REST API if GraphQL fails
@@ -150,18 +190,15 @@ export default function CampaignPage() {
   // Fallback: REST API version (kept for compatibility)
   const fetchCampaignDataREST = async () => {
     try {
-      logger.info("Fetching campaigns from REST API...");
+      logger.info("Fetching founders from AWS AppSync GraphQL...");
 
-      const [campaignsResponse, tiersResponse, foundersResponse] =
-        await Promise.all([
-          fetch("/api/campaigns"),
-          fetch("/api/contribution-tiers"),
-          fetch("/api/founders"),
-        ]);
+      const client = generateClient();
 
-      if (!campaignsResponse.ok || !tiersResponse.ok || !foundersResponse.ok) {
-        throw new Error("Failed to fetch campaign data from REST API");
-      }
+      const response = await client.graphql({
+        query: LIST_FOUNDERS,
+      });
+
+      const data = "data" in response ? response.data.listFounders : null;
 
       const [campaignsData, tiersData, foundersData] = await Promise.all([
         campaignsResponse.json(),
