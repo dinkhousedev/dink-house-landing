@@ -49,8 +49,11 @@ export function formatBenefit(benefit: Benefit): string {
   const quantity = benefitData.quantity || benefit.quantity;
 
   // Add quantity if present and greater than 1
-  if (quantity && parseInt(quantity) > 1) {
-    return `${displayText} (${quantity})`;
+  if (quantity) {
+    const quantityNum = typeof quantity === 'number' ? quantity : parseInt(quantity, 10);
+    if (!isNaN(quantityNum) && quantityNum > 1) {
+      return `${displayText} (${quantity})`;
+    }
   }
 
   return displayText;
