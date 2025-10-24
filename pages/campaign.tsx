@@ -89,7 +89,8 @@ export default function CampaignPage() {
         setShowSuccessMessage(false);
       }, 5000);
     }
-  }, [router.query]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [router.query.success]);
 
   // Fetch all campaign data using GraphQL (single query!)
   const fetchAllCampaignData = async () => {

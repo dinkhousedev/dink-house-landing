@@ -11,6 +11,7 @@ export default function VideoBanner() {
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
   const [isVideoLoaded, setIsVideoLoaded] = useState(false);
   const [logoFaded, setLogoFaded] = useState(false);
+  const [hasError, setHasError] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   // Trigger logo fade-out after a short delay on mount
@@ -34,11 +35,13 @@ export default function VideoBanner() {
 
     const handleCanPlay = () => {
       setIsVideoLoaded(true);
+      setHasError(false);
       // Defer autoplay using requestIdleCallback for better performance
       if ("requestIdleCallback" in window) {
         requestIdleCallback(() => {
           video.play().catch((error) => {
             logger.warn("Video autoplay failed:", error);
+            setHasError(true);
           });
         });
       } else {
@@ -46,17 +49,25 @@ export default function VideoBanner() {
         setTimeout(() => {
           video.play().catch((error) => {
             logger.warn("Video autoplay failed:", error);
+            setHasError(true);
           });
         }, 100);
       }
     };
 
+    const handleError = () => {
+      logger.error("Video failed to load:", VIDEO_URLS[currentVideoIndex]);
+      setHasError(true);
+    };
+
     video.addEventListener("ended", handleVideoEnded);
     video.addEventListener("canplay", handleCanPlay);
+    video.addEventListener("error", handleError);
 
     return () => {
       video.removeEventListener("ended", handleVideoEnded);
       video.removeEventListener("canplay", handleCanPlay);
+      video.removeEventListener("error", handleError);
     };
   }, []);
 
@@ -91,13 +102,14 @@ export default function VideoBanner() {
       {/* Video Background */}
       <video
         ref={videoRef}
+        autoPlay
         muted
         playsInline
         className="absolute inset-0 w-full h-full object-cover"
         controls={false}
         loop={VIDEO_URLS.length <= 1}
         poster={LOGO_URL}
-        preload="metadata"
+        preload="auto"
       >
         <source src={VIDEO_URLS[currentVideoIndex]} type="video/mp4" />
         Your browser does not support the video tag.
