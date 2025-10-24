@@ -15,7 +15,7 @@ import { getCampaignImageUrl } from "@/config/media-urls";
 import { logger } from "@/lib/logger";
 import { formatBenefit } from "@/lib/format-benefits";
 import "@/lib/graphql-client";
-import { LIST_CAMPAIGNS, LIST_CONTRIBUTION_TIERS } from "@/lib/graphql-queries";
+import { LIST_CAMPAIGNS, LIST_CONTRIBUTION_TIERS, LIST_FOUNDERS } from "@/lib/graphql-queries";
 
 interface CampaignType {
   id: string;
@@ -161,8 +161,22 @@ export default function CampaignPage() {
       });
 
       setTiers(tiersByCampaign);
+
+      // Fetch founders using GraphQL
+      const foundersResponse = await client.graphql({
+        query: LIST_FOUNDERS,
+      });
+
+      const foundersData =
+        "data" in foundersResponse
+          ? foundersResponse.data.listFounders
+          : null;
+
+      setFounders(foundersData || []);
+
       logger.debug("Campaigns loaded:", campaignsData?.length);
       logger.debug("Tiers loaded:", tiersData?.length);
+      logger.debug("Founders loaded:", foundersData?.length);
       logger.debug(
         "First 3 tier IDs:",
         tiersData?.slice(0, 3).map((t: any) => ({ id: t.id, name: t.name })),
