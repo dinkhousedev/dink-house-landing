@@ -26,6 +26,7 @@ yarn-error.log*
 
 # Local AWS CLI exports (never commit keys)
 aws.config
+.amplify-env-push.json
 
 # local env files
 .env*.local
