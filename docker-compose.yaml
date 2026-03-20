@@ -3,12 +3,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: dink-house-landing
-    restart: unless-stopped
     expose:
       - "3000"
-    env_file:
-      - .env
+    restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000"]
       interval: 30s
