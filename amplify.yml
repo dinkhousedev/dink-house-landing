@@ -16,8 +16,7 @@ frontend:
         # fetching via `aws ssm` in this file was removed to avoid AccessDenied during install.
         - echo "Using environment variables from Amplify (configure in Console for this branch)"
 
-        # Install dependencies
-        - npm install
+        - npm ci
 
         # Verify no debug packages are in production dependencies
         - echo "Verifying production dependencies..."
