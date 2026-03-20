@@ -1,16 +1,13 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { buffer } from "micro";
 import Stripe from "stripe";
-import { createClient } from "@supabase/supabase-js";
+import type { SupabaseClient } from "@supabase/supabase-js";
+
+import { getSupabaseServiceClient } from "@/lib/supabase-server";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
-  apiVersion: "2025-09-30.clover",
+  apiVersion: "2025-10-29.clover",
 });
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || "",
-  process.env.SUPABASE_SERVICE_KEY || ""
-);
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || "";
 
@@ -270,29 +267,35 @@ export default async function handler(
 
   console.log(`Processing webhook event: ${event.type}`);
 
+  const supabase = getSupabaseServiceClient();
+  if (!supabase) {
+    console.error("Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_KEY");
+    return res.status(503).json({ error: "Supabase not configured" });
+  }
+
   try {
     switch (event.type) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
-        await handleCheckoutCompleted(session);
+        await handleCheckoutCompleted(session, supabase);
         break;
       }
 
       case "payment_intent.succeeded": {
         const paymentIntent = event.data.object as Stripe.PaymentIntent;
-        await handlePaymentSucceeded(paymentIntent);
+        await handlePaymentSucceeded(paymentIntent, supabase);
         break;
       }
 
       case "payment_intent.payment_failed": {
         const paymentIntent = event.data.object as Stripe.PaymentIntent;
-        await handlePaymentFailed(paymentIntent);
+        await handlePaymentFailed(paymentIntent, supabase);
         break;
       }
 
       case "charge.refunded": {
         const charge = event.data.object as Stripe.Charge;
-        await handleChargeRefunded(charge);
+        await handleChargeRefunded(charge, supabase);
         break;
       }
 
@@ -309,7 +312,10 @@ export default async function handler(
   }
 }
 
-async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
+async function handleCheckoutCompleted(
+  session: Stripe.Checkout.Session,
+  supabase: SupabaseClient,
+) {
   console.log("Processing checkout.session.completed", session.id);
 
   const contributionId = session.metadata?.contribution_id;
@@ -448,7 +454,10 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   }
 }
 
-async function handlePaymentSucceeded(paymentIntent: Stripe.PaymentIntent) {
+async function handlePaymentSucceeded(
+  paymentIntent: Stripe.PaymentIntent,
+  supabase: SupabaseClient,
+) {
   console.log("Processing payment_intent.succeeded", paymentIntent.id);
 
   const { error } = await supabase
@@ -464,7 +473,10 @@ async function handlePaymentSucceeded(paymentIntent: Stripe.PaymentIntent) {
   }
 }
 
-async function handlePaymentFailed(paymentIntent: Stripe.PaymentIntent) {
+async function handlePaymentFailed(
+  paymentIntent: Stripe.PaymentIntent,
+  supabase: SupabaseClient,
+) {
   console.log("Processing payment_intent.payment_failed", paymentIntent.id);
 
   const { error } = await supabase
@@ -479,7 +491,10 @@ async function handlePaymentFailed(paymentIntent: Stripe.PaymentIntent) {
   }
 }
 
-async function handleChargeRefunded(charge: Stripe.Charge) {
+async function handleChargeRefunded(
+  charge: Stripe.Charge,
+  supabase: SupabaseClient,
+) {
   console.log("Processing charge.refunded", charge.id);
 
   // Find contribution

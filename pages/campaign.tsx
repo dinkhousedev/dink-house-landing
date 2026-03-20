@@ -5,7 +5,7 @@ import { Card, CardBody, CardHeader, CardFooter } from "@heroui/react";
 import { Progress } from "@heroui/react";
 import { Chip } from "@heroui/chip";
 import { Icon } from "@iconify/react";
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import Image from "next/image";
 import { LazyMotion, domAnimation, m } from "framer-motion";
 
@@ -13,10 +13,15 @@ import DefaultLayout from "@/layouts/default";
 import ContributionModal from "@/components/ContributionModal";
 import { getCampaignImageUrl } from "@/config/media-urls";
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || "",
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
-);
+let supabaseClient: SupabaseClient | null = null;
+
+function getSupabase(): SupabaseClient | null {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !key) return null;
+  if (!supabaseClient) supabaseClient = createClient(url, key);
+  return supabaseClient;
+}
 
 /** Supabase `data` should be an array; normalize so `.forEach` / `.find` never throw on bad shapes. */
 function asArray<T>(value: unknown): T[] {
@@ -102,6 +107,12 @@ export default function CampaignPage() {
 
   const fetchCampaignData = async () => {
     try {
+      const supabase = getSupabase();
+      if (!supabase) {
+        console.warn("Supabase env not set (NEXT_PUBLIC_SUPABASE_URL / ANON_KEY)");
+        return;
+      }
+
       console.log("Fetching campaigns from Supabase...");
       console.log("Supabase URL:", process.env.NEXT_PUBLIC_SUPABASE_URL);
 
@@ -157,6 +168,9 @@ export default function CampaignPage() {
 
   const fetchFounders = async () => {
     try {
+      const supabase = getSupabase();
+      if (!supabase) return;
+
       const { data, error } = await supabase
         .from("founders_wall")
         .select("*")

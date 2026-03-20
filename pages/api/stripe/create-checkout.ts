@@ -1,15 +1,11 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import Stripe from "stripe";
-import { createClient } from "@supabase/supabase-js";
+
+import { getSupabaseServiceClient } from "@/lib/supabase-server";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
-  apiVersion: "2025-09-30.clover",
+  apiVersion: "2025-10-29.clover",
 });
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL || "",
-  process.env.SUPABASE_SERVICE_KEY || ""
-);
 
 interface CreateCheckoutRequest {
   tierId: string;
@@ -43,6 +39,15 @@ export default async function handler(
   }
 
   try {
+    const supabase = getSupabaseServiceClient();
+    if (!supabase) {
+      console.error("Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_KEY");
+      return res.status(503).json({
+        success: false,
+        error: "Server configuration error",
+      });
+    }
+
     const {
       tierId,
       firstName,

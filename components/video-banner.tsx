@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import { MEDIA_URLS } from "@/config/media-urls";
 
-const VIDEO_URLS = MEDIA_URLS.videos;
+const VIDEO_URLS: readonly string[] = MEDIA_URLS.videos;
 const LOGO_URL = MEDIA_URLS.logo;
 
 export default function VideoBanner() {
