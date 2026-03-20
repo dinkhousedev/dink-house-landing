@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import { Accordion, AccordionItem } from "@heroui/accordion";
 import { Plus, Bell } from "lucide-react";
 import { Button } from "@heroui/button";
-import { Card, CardBody } from "@heroui/card";
+import { Card, CardBody } from "@heroui/react";
 
 import faqs from "./faqs-data";
 
