@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import { logger } from "@/lib/logger";
-import { insertContactInquiry } from "@/lib/supabase-forms";
+import { logger } from "../../../lib/logger";
+import { insertContactInquiry } from "../../../lib/supabase-forms";
 
 const RATE_LIMIT_PER_MINUTE = parseInt(
   process.env.RATE_LIMIT_PER_MINUTE || "5",

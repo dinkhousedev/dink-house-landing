@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import { logger } from "@/lib/logger";
-import { upsertLaunchSubscriber } from "@/lib/supabase-forms";
+import { logger } from "../../../lib/logger";
+import { upsertLaunchSubscriber } from "../../../lib/supabase-forms";
 
 export async function POST(req: NextRequest) {
   try {

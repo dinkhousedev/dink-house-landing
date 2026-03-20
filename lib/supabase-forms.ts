@@ -1,4 +1,4 @@
-import { getSupabaseServiceClient } from "@/lib/supabase-server";
+import { getSupabaseServiceClient } from "./supabase-server";
 
 export type SubscriberUpsertResult =
   | { ok: true; duplicate: true }
