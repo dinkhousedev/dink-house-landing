@@ -10,22 +10,13 @@ frontend:
         - node --version
         - npm --version
 
-        # Fetch secrets based on branch
-        # Production (us-east-1): Fetch from SSM Parameter Store
-        # Staging/Dev (us-east-1): Use Amplify environment variables
-        - |
-          if [ "$AWS_BRANCH" = "production" ]; then
-            echo "🔒 Production branch detected - fetching secrets from SSM Parameter Store (us-east-1)"
-            export STRIPE_SECRET_KEY=$(aws ssm get-parameter --name /dink-house/production/stripe-secret-key --with-decryption --query Parameter.Value --output text --region us-east-1)
-            export STRIPE_WEBHOOK_SECRET=$(aws ssm get-parameter --name /dink-house/production/stripe-webhook-secret --with-decryption --query Parameter.Value --output text --region us-east-1)
-            export DB_PASSWORD=$(aws ssm get-parameter --name /dink-house/production/db-password --with-decryption --query Parameter.Value --output text --region us-east-1)
-            echo "✓ Secrets fetched from SSM successfully"
-          else
-            echo "🔧 Non-production branch ($AWS_BRANCH) - using Amplify environment variables (no SSM)"
-            echo "✓ Using environment variables set in Amplify Console"
-          fi
+        # Secrets: set STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, SUPABASE_SERVICE_KEY,
+        # NEXT_PUBLIC_* vars in Amplify Console → Environment variables (per branch).
+        # SSM Parameter Store requires IAM ssm:GetParameter on those parameters for the build role;
+        # fetching via `aws ssm` in this file was removed to avoid AccessDenied during install.
+        - echo "Using environment variables from Amplify (configure in Console for this branch)"
 
-        # Install dependencies (package-lock.json is gitignored)
+        # Install dependencies
         - npm install
 
         # Verify no debug packages are in production dependencies
@@ -90,52 +81,11 @@ frontend:
       - .next/cache/**/*
       - '!.next/cache/webpack/**/*'
 
-# Environment variables (configure in AWS Amplify Console)
-# These should be set in the Amplify Console > App Settings > Environment Variables
-#
-# IMPORTANT: Branch-specific configuration
-# - Production branch (us-east-1): Secrets fetched from SSM Parameter Store
-# - Staging/Dev branches (us-east-1): All variables set directly in Amplify Console
-#
-# REQUIRED AMPLIFY ENVIRONMENT VARIABLES (All Branches):
-# - NODE_ENV=production
-# - NEXT_TELEMETRY_DISABLED=1
-# - DB_HOST=<rds-endpoint>
-# - DB_PORT=5432
-# - DB_NAME=dink_house
-# - DB_USER=postgres
-# - DB_SSL=true
-# - NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=<pk_live_... or pk_test_...>
-# - CONTACT_EMAIL=<contact-email>
-# - FROM_EMAIL=<from-email>
-# - SITE_URL=<site-url>
-# - NEXT_PUBLIC_SITE_URL=<site-url>
-# - NEXT_PUBLIC_AWS_API_URL=<api-gateway-url>
-# - AWS_API_URL=<api-gateway-url>
-# - NEXT_PUBLIC_CLOUDFRONT_URL=<cloudfront-url>
-# - NEXT_PUBLIC_MEDIA_BUCKET=<s3-bucket-name>
-# - RATE_LIMIT_PER_MINUTE=<rate-limit>
-# - RATE_LIMIT_PER_HOUR=<rate-limit>
-#
-# AWS APPSYNC GRAPHQL API (Required for newsletter/waitlist signup):
-# - NEXT_PUBLIC_APPSYNC_API_URL=https://swszcyfekzd4rcyhulnj7ud5vy.appsync-api.us-east-2.amazonaws.com/graphql
-# - NEXT_PUBLIC_APPSYNC_API_KEY=<appsync-api-key>
-# - NEXT_PUBLIC_APPSYNC_REGION=us-east-2
-#
-# SUPABASE (Required for newsletter resubscribe):
-# - NEXT_PUBLIC_SUPABASE_URL=https://api.dinkhousepb.com
-# - NEXT_PUBLIC_SUPABASE_ANON_KEY=<supabase-anon-key>
-#
-# ADDITIONAL VARIABLES FOR NON-PRODUCTION BRANCHES (Staging/Dev only):
-# These are NOT needed for production (fetched from SSM instead):
-# - STRIPE_SECRET_KEY=<sk_test_...>
-# - STRIPE_WEBHOOK_SECRET=<whsec_...>
-# - DB_PASSWORD=<staging-db-password>
-#
-# SSM PARAMETERS (Production only - us-east-1):
-# - /dink-house/production/stripe-secret-key (SecureString)
-# - /dink-house/production/stripe-webhook-secret (SecureString)
-# - /dink-house/production/db-password (SecureString)
+# Configure in Amplify Console → Environment variables (per branch), including:
+# - NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY
+# - SUPABASE_SERVICE_KEY (server-only; Stripe API routes)
+# - STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET
+# - NEXT_PUBLIC_SITE_URL, NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY (if used)
 
 # SECURITY NOTES:
 # 1. Console logs are stripped via next.config.js compiler.removeConsole
