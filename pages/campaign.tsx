@@ -55,6 +55,10 @@ const CAMPAIGN_IMAGES = {
   "dink-boards": getCampaignImageUrl("dinkboard.webp"),
 };
 
+function asArray<T>(value: unknown): T[] {
+  return Array.isArray(value) ? (value as T[]) : [];
+}
+
 export default function CampaignPage() {
   const router = useRouter();
   const [campaigns, setCampaigns] = useState<CampaignType[]>([]);
@@ -111,7 +115,7 @@ export default function CampaignPage() {
 
       logger.debug("Campaigns response:", campaignsData);
 
-      setCampaigns(campaignsData || []);
+      setCampaigns(asArray<CampaignType>(campaignsData));
 
       // Fetch contribution tiers using GraphQL
       const tiersResponse = await client.graphql({
@@ -126,7 +130,7 @@ export default function CampaignPage() {
       // Group tiers by campaign
       const tiersByCampaign: Record<string, ContributionTier[]> = {};
 
-      (tiersData || []).forEach((tier: any) => {
+      asArray(tiersData).forEach((tier: any) => {
         if (!tiersByCampaign[tier.campaign_type_id]) {
           tiersByCampaign[tier.campaign_type_id] = [];
         }
@@ -173,14 +177,15 @@ export default function CampaignPage() {
           ? foundersResponse.data.listFounders
           : null;
 
-      setFounders(foundersData || []);
+      setFounders(asArray<FounderEntry>(foundersData));
 
-      logger.debug("Campaigns loaded:", campaignsData?.length);
-      logger.debug("Tiers loaded:", tiersData?.length);
-      logger.debug("Founders loaded:", foundersData?.length);
+      const tiersList = asArray(tiersData);
+      logger.debug("Campaigns loaded:", asArray(campaignsData).length);
+      logger.debug("Tiers loaded:", tiersList.length);
+      logger.debug("Founders loaded:", asArray(foundersData).length);
       logger.debug(
         "First 3 tier IDs:",
-        tiersData?.slice(0, 3).map((t: any) => ({ id: t.id, name: t.name })),
+        tiersList.slice(0, 3).map((t: any) => ({ id: t.id, name: t.name })),
       );
     } catch (error) {
       logger.error("Error fetching campaign data from GraphQL:", error);
@@ -204,17 +209,39 @@ export default function CampaignPage() {
           fetch("/api/founders"),
         ]);
 
+      const readJsonArray = async <T,>(
+        response: Response,
+        label: string,
+      ): Promise<T[]> => {
+        let body: unknown;
+        try {
+          body = await response.json();
+        } catch {
+          logger.warn(`REST ${label}: invalid JSON`);
+          return [];
+        }
+        if (!response.ok) {
+          logger.warn(`REST ${label}: HTTP ${response.status}`, body);
+          return [];
+        }
+        if (!Array.isArray(body)) {
+          logger.warn(`REST ${label}: expected array, got ${typeof body}`);
+          return [];
+        }
+        return body as T[];
+      };
+
       const [campaignsData, tiersData, foundersData] = await Promise.all([
-        campaignsResponse.json(),
-        tiersResponse.json(),
-        foundersResponse.json(),
+        readJsonArray<CampaignType>(campaignsResponse, "campaigns"),
+        readJsonArray<ContributionTier>(tiersResponse, "contribution-tiers"),
+        readJsonArray<FounderEntry>(foundersResponse, "founders"),
       ]);
 
-      setCampaigns(campaignsData || []);
+      setCampaigns(campaignsData);
 
       const tiersByCampaign: Record<string, ContributionTier[]> = {};
 
-      (tiersData || []).forEach((tier: ContributionTier) => {
+      tiersData.forEach((tier: ContributionTier) => {
         if (!tiersByCampaign[tier.campaign_type_id]) {
           tiersByCampaign[tier.campaign_type_id] = [];
         }
@@ -222,7 +249,7 @@ export default function CampaignPage() {
       });
 
       setTiers(tiersByCampaign);
-      setFounders(foundersData || []);
+      setFounders(foundersData);
     } catch (error) {
       logger.error("Error fetching campaign data from REST:", error);
     }
