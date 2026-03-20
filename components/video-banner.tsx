@@ -1,18 +1,20 @@
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
-
 import { MEDIA_URLS } from "@/config/media-urls";
-import { logger } from "@/lib/logger";
 
-const VIDEO_URLS = MEDIA_URLS.videos;
-const LOGO_URL = "/dinklogo.jpg"; // Use local file for website display
+const VIDEO_URLS: readonly string[] = MEDIA_URLS.videos;
+const LOGO_URL = MEDIA_URLS.logo;
 
 export default function VideoBanner() {
   const [currentVideoIndex, setCurrentVideoIndex] = useState(0);
-  const [isVideoLoaded, setIsVideoLoaded] = useState(false);
+  const [isClient, setIsClient] = useState(false);
   const [logoFaded, setLogoFaded] = useState(false);
-  const [hasError, setHasError] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+
+  // Ensure component only renders on client
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   // Trigger logo fade-out after a short delay on mount
   useEffect(() => {
@@ -25,7 +27,6 @@ export default function VideoBanner() {
 
   useEffect(() => {
     const video = videoRef.current;
-
     if (!video) return;
 
     const handleVideoEnded = () => {
@@ -34,82 +35,50 @@ export default function VideoBanner() {
     };
 
     const handleCanPlay = () => {
-      setIsVideoLoaded(true);
-      setHasError(false);
-      // Defer autoplay using requestIdleCallback for better performance
-      if ("requestIdleCallback" in window) {
-        requestIdleCallback(() => {
-          video.play().catch((error) => {
-            logger.warn("Video autoplay failed:", error);
-            setHasError(true);
-          });
-        });
-      } else {
-        // Fallback for browsers without requestIdleCallback
-        setTimeout(() => {
-          video.play().catch((error) => {
-            logger.warn("Video autoplay failed:", error);
-            setHasError(true);
-          });
-        }, 100);
-      }
-    };
-
-    const handleError = () => {
-      logger.error("Video failed to load:", VIDEO_URLS[currentVideoIndex]);
-      setHasError(true);
+      video.play().catch((error) => {
+        console.warn("Video autoplay failed:", error);
+      });
     };
 
     video.addEventListener("ended", handleVideoEnded);
     video.addEventListener("canplay", handleCanPlay);
-    video.addEventListener("error", handleError);
 
     return () => {
       video.removeEventListener("ended", handleVideoEnded);
       video.removeEventListener("canplay", handleCanPlay);
-      video.removeEventListener("error", handleError);
     };
   }, []);
 
   // Reset and play video when index changes
   useEffect(() => {
     const video = videoRef.current;
-
-    if (video && isVideoLoaded) {
+    if (video && isClient) {
       video.load();
-      // Defer playback using requestIdleCallback
-      if ("requestIdleCallback" in window) {
-        requestIdleCallback(() => {
-          video.play().catch((error) => {
-            logger.warn("Video autoplay failed:", error);
-          });
+      // Attempt to play after a short delay to ensure load completes
+      setTimeout(() => {
+        video.play().catch((error) => {
+          console.warn("Video autoplay failed:", error);
         });
-      } else {
-        setTimeout(() => {
-          video.play().catch((error) => {
-            logger.warn("Video autoplay failed:", error);
-          });
-        }, 100);
-      }
+      }, 100);
     }
-  }, [currentVideoIndex, isVideoLoaded]);
+  }, [currentVideoIndex, isClient]);
+
+  if (!isClient) {
+    return null;
+  }
 
   return (
-    <div className="relative w-full h-[50vh] sm:h-[60vh] lg:h-[70vh] overflow-hidden bg-black">
-      {/* Server-rendered placeholder to prevent layout shift */}
-      <div className="absolute inset-0 bg-black" />
-
+    <div className="relative w-full h-[50vh] sm:h-[60vh] lg:h-[70vh] overflow-hidden">
       {/* Video Background */}
       <video
         ref={videoRef}
+        className="absolute inset-0 w-full h-full object-cover"
         autoPlay
         muted
         playsInline
-        className="absolute inset-0 w-full h-full object-cover"
-        controls={false}
-        loop={VIDEO_URLS.length <= 1}
-        poster={LOGO_URL}
+        loop={VIDEO_URLS.length === 1}
         preload="auto"
+        controls={false}
       >
         <source src={VIDEO_URLS[currentVideoIndex]} type="video/mp4" />
         Your browser does not support the video tag.
@@ -121,17 +90,17 @@ export default function VideoBanner() {
       {/* Centered Logo with Fade-Out */}
       <div
         className={`absolute inset-0 flex items-center justify-center transition-opacity duration-[3000ms] ease-out ${
-          logoFaded ? "opacity-0" : "opacity-100"
+          logoFaded ? 'opacity-0' : 'opacity-100'
         }`}
       >
         <div className="relative w-[200px] h-[200px] sm:w-[200px] sm:h-[200px] lg:w-[200px] lg:h-[200px] rounded-2xl overflow-hidden">
           <Image
-            fill
-            priority
-            alt="The Dink House Logo"
-            className="object-contain"
-            sizes="(max-width: 640px) 200px, (max-width: 1024px) 300px, 400px"
             src={LOGO_URL}
+            alt="The Dink House Logo"
+            fill
+            className="object-contain"
+            priority
+            sizes="(max-width: 640px) 200px, (max-width: 1024px) 300px, 400px"
           />
         </div>
       </div>
