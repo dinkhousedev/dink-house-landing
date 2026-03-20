@@ -51,15 +51,15 @@
         90deg,
         transparent,
         transparent 100px,
-        #B3FF0010 100px,
-        #B3FF0010 102px
+        #b3ff0010 100px,
+        #b3ff0010 102px
       ),
       repeating-linear-gradient(
         0deg,
         transparent,
         transparent 100px,
-        #B3FF0010 100px,
-        #B3FF0010 102px
+        #b3ff0010 100px,
+        #b3ff0010 102px
       );
   }
 
@@ -74,7 +74,7 @@
   }
 
   .btn-athletic::before {
-    content: '';
+    content: "";
     @apply absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-0 -translate-x-full;
     transition: all 0.6s;
   }
@@ -89,7 +89,7 @@
   }
 
   .championship-badge::after {
-    content: '★★★';
+    content: "★★★";
     @apply absolute -bottom-4 left-1/2 transform -translate-x-1/2 text-dink-lime text-xs;
   }
 }
@@ -102,11 +102,12 @@
 
   /* Neon Glow Animation */
   @keyframes neon-pulse {
-    0%, 100% {
-      filter: brightness(1) drop-shadow(0 0 10px #B3FF00);
+    0%,
+    100% {
+      filter: brightness(1) drop-shadow(0 0 10px #b3ff00);
     }
     50% {
-      filter: brightness(1.2) drop-shadow(0 0 20px #B3FF00);
+      filter: brightness(1.2) drop-shadow(0 0 20px #b3ff00);
     }
   }
 
@@ -151,7 +152,8 @@
 
   /* Pulse animation for coming soon */
   @keyframes pulse-slow {
-    0%, 100% {
+    0%,
+    100% {
       transform: scale(1);
       opacity: 1;
     }

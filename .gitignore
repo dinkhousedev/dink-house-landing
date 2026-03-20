@@ -24,8 +24,17 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+# Local AWS CLI exports (never commit keys)
+aws.config
+.amplify-env-push.json
+
 # local env files
 .env*.local
+
+# Environment files with secrets (ignore all .env files except .env.example)
+.env
+.env.*
+!.env.example
 
 # vercel
 .vercel
@@ -36,5 +45,9 @@ next-env.d.ts
 
 pnpm-lock.yaml
 yarn.lock
-package-lock.json
 bun.lockb
+.env.example
+AMPLIFY_ENV_VARS.md
+.env.production
+.env.production
+next.config.js

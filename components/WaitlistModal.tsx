@@ -69,25 +69,39 @@ const WaitlistModal: React.FC<WaitlistModalProps> = ({ isOpen, onClose }) => {
     setSubmitStatus("idle");
 
     try {
-      const response = await fetch("/api/contact", {
+      const response = await fetch("/api/subscribers", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: formData.email.trim().toLowerCase(),
+          firstName: formData.firstName.trim(),
+          lastName: formData.lastName.trim(),
+          source: "website",
+        }),
       });
 
-      const data = await response.json();
+      const result = (await response.json()) as {
+        success?: boolean;
+        duplicate?: boolean;
+        error?: string;
+      };
 
-      if (response.ok) {
-        // Check if this is a duplicate based on the message
-        if (data.message && data.message.includes("already on our waitlist")) {
-          setSubmitStatus("duplicate");
-        } else {
-          setSubmitStatus("success");
-          setFormData({ firstName: "", lastName: "", email: "" });
-          setAcceptNotifications(false);
-        }
+      if (!response.ok) {
+        setSubmitStatus("error");
+        setErrors({
+          submit: result.error || "Something went wrong. Please try again.",
+        });
+
+        return;
+      }
+
+      if (result.duplicate) {
+        setSubmitStatus("duplicate");
+      } else if (result.success) {
+        setSubmitStatus("success");
+        setFormData({ firstName: "", lastName: "", email: "" });
+        setAcceptNotifications(false);
+
         setTimeout(() => {
           onClose();
           setSubmitStatus("idle");
@@ -96,7 +110,7 @@ const WaitlistModal: React.FC<WaitlistModalProps> = ({ isOpen, onClose }) => {
         }, 3000);
       } else {
         setSubmitStatus("error");
-        setErrors({ submit: data.error || "Something went wrong" });
+        setErrors({ submit: result.error || "Something went wrong" });
       }
     } catch (error) {
       const message =

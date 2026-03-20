@@ -1,7 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from "next";
+
 import Stripe from "stripe";
 
-import { getSupabaseServiceClient } from "@/lib/supabase-server";
+import { getSupabaseServiceClient } from "../../../lib/supabase-server";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
   apiVersion: "2025-10-29.clover",
@@ -29,7 +30,7 @@ interface ApiResponse {
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<ApiResponse>
+  res: NextApiResponse<ApiResponse>,
 ) {
   if (req.method !== "POST") {
     return res.status(405).json({
@@ -40,8 +41,10 @@ export default async function handler(
 
   try {
     const supabase = getSupabaseServiceClient();
+
     if (!supabase) {
       console.error("Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_KEY");
+
       return res.status(503).json({
         success: false,
         error: "Server configuration error",
@@ -72,16 +75,19 @@ export default async function handler(
     // Get tier details (using public view)
     const { data: tier, error: tierError } = await supabase
       .from("contribution_tiers")
-      .select(`
+      .select(
+        `
         *,
         campaign_type:campaign_types(*)
-      `)
+      `,
+      )
       .eq("id", tierId)
       .single();
 
     if (tierError || !tier) {
       console.error("Tier fetch error:", JSON.stringify(tierError, null, 2));
       console.error("Attempted tier ID:", tierId);
+
       return res.status(404).json({
         success: false,
         error: "Contribution tier not found",
@@ -122,8 +128,10 @@ export default async function handler(
     let stripeCustomerId: string | undefined;
 
     // Check if backer exists
-    const { data: existingBackerData } = await supabase
-      .rpc("get_backer_by_email", { p_email: email.toLowerCase() });
+    const { data: existingBackerData } = await supabase.rpc(
+      "get_backer_by_email",
+      { p_email: email.toLowerCase() },
+    );
 
     if (existingBackerData?.stripe_customer_id) {
       stripeCustomerId = existingBackerData.stripe_customer_id;
@@ -140,12 +148,14 @@ export default async function handler(
           state: state || "",
         },
       });
+
       stripeCustomerId = customer.id;
     }
 
     // Create backer and contribution using RPC function
-    const { data: checkoutData, error: checkoutError } = await supabase
-      .rpc("create_checkout_contribution", {
+    const { data: checkoutData, error: checkoutError } = await supabase.rpc(
+      "create_checkout_contribution",
+      {
         p_email: email.toLowerCase(),
         p_first_name: firstName,
         p_last_initial: lastInitial,
@@ -158,10 +168,12 @@ export default async function handler(
         p_stripe_customer_id: stripeCustomerId,
         p_is_public: isPublic,
         p_show_amount: showAmount,
-      });
+      },
+    );
 
     if (checkoutError || !checkoutData) {
       console.error("Checkout creation error:", checkoutError);
+
       return res.status(500).json({
         success: false,
         error: "Failed to create contribution record",
@@ -181,7 +193,8 @@ export default async function handler(
             currency: "usd",
             product_data: {
               name: customAmount ? `${tier.name} - Custom Amount` : tier.name,
-              description: tier.description || `Support ${tier.campaign_type.name}`,
+              description:
+                tier.description || `Support ${tier.campaign_type.name}`,
             },
             unit_amount: Math.round(finalAmount * 100), // Convert to cents
           },
@@ -217,6 +230,7 @@ export default async function handler(
     });
   } catch (error) {
     console.error("Error creating checkout session:", error);
+
     return res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : "Internal server error",

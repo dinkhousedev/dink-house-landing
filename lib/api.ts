@@ -1,3 +1,5 @@
+import { logger } from "@/lib/logger";
+
 // API configuration
 const API_URL =
   process.env.NEXT_PUBLIC_API_URL || "https://api.dinkhousepb.com";
@@ -49,7 +51,7 @@ async function apiCall<T>(endpoint: string, data: any): Promise<T> {
 
     return await response.json();
   } catch (error) {
-    console.error("API call failed:", error);
+    logger.error("API call failed:", error);
     throw error;
   }
 }
