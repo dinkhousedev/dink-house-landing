@@ -1,7 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from "next";
+import type { SupabaseClient } from "@supabase/supabase-js";
+
 import { buffer } from "micro";
 import Stripe from "stripe";
-import type { SupabaseClient } from "@supabase/supabase-js";
 
 import { getSupabaseServiceClient } from "@/lib/supabase-server";
 
@@ -56,16 +57,18 @@ function generateContributionEmailHTML(data: EmailData): string {
     on_founders_wall,
     display_name,
     founders_wall_message,
-    site_url = 'https://thedinkhouse.com'
+    site_url = "https://thedinkhouse.com",
   } = data;
 
-  const foundersWallSection = on_founders_wall ? `
+  const foundersWallSection = on_founders_wall
+    ? `
     <div class="recognition-box">
       <h3>🌟 You're on the Founders Wall!</h3>
       <p>Your name will be displayed as: <strong>${display_name}</strong></p>
       <p style="margin-top: 8px;">${founders_wall_message}</p>
     </div>
-  ` : '';
+  `
+    : "";
 
   return `
 <!DOCTYPE html>
@@ -177,17 +180,19 @@ function generateContributionEmailText(data: EmailData): string {
     on_founders_wall,
     display_name,
     founders_wall_message,
-    site_url = 'https://thedinkhouse.com'
+    site_url = "https://thedinkhouse.com",
   } = data;
 
-  const foundersWallSection = on_founders_wall ? `
+  const foundersWallSection = on_founders_wall
+    ? `
 =====================================
 🌟 FOUNDERS WALL RECOGNITION
 =====================================
 
 Your name will be displayed as: ${display_name}
 ${founders_wall_message}
-` : '';
+`
+    : "";
 
   return `Hi ${first_name},
 
@@ -240,7 +245,7 @@ This is a receipt for your contribution. Please keep for your records.
 
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse
+  res: NextApiResponse,
 ) {
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
@@ -250,6 +255,7 @@ export default async function handler(
 
   if (!sig) {
     console.error("Missing stripe-signature header");
+
     return res.status(400).json({ error: "Missing stripe-signature header" });
   }
 
@@ -257,9 +263,11 @@ export default async function handler(
 
   try {
     const buf = await buffer(req);
+
     event = stripe.webhooks.constructEvent(buf, sig, webhookSecret);
   } catch (err) {
     console.error("Webhook signature verification failed:", err);
+
     return res.status(400).json({
       error: `Webhook signature verification failed: ${err instanceof Error ? err.message : "Unknown error"}`,
     });
@@ -268,8 +276,10 @@ export default async function handler(
   console.log(`Processing webhook event: ${event.type}`);
 
   const supabase = getSupabaseServiceClient();
+
   if (!supabase) {
     console.error("Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_KEY");
+
     return res.status(503).json({ error: "Supabase not configured" });
   }
 
@@ -277,24 +287,28 @@ export default async function handler(
     switch (event.type) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
+
         await handleCheckoutCompleted(session, supabase);
         break;
       }
 
       case "payment_intent.succeeded": {
         const paymentIntent = event.data.object as Stripe.PaymentIntent;
+
         await handlePaymentSucceeded(paymentIntent, supabase);
         break;
       }
 
       case "payment_intent.payment_failed": {
         const paymentIntent = event.data.object as Stripe.PaymentIntent;
+
         await handlePaymentFailed(paymentIntent, supabase);
         break;
       }
 
       case "charge.refunded": {
         const charge = event.data.object as Stripe.Charge;
+
         await handleChargeRefunded(charge, supabase);
         break;
       }
@@ -306,6 +320,7 @@ export default async function handler(
     return res.status(200).json({ received: true });
   } catch (error) {
     console.error("Error processing webhook:", error);
+
     return res.status(500).json({
       error: error instanceof Error ? error.message : "Internal server error",
     });
@@ -324,6 +339,7 @@ async function handleCheckoutCompleted(
 
   if (!contributionId) {
     console.error("Missing contribution_id in session metadata");
+
     return;
   }
 
@@ -350,68 +366,73 @@ async function handleCheckoutCompleted(
 
     // Send the thank you email immediately
     try {
-      const { data: emailResult, error: emailError } = await supabase
-        .rpc("send_contribution_thank_you_email", {
+      const { data: emailResult, error: emailError } = await supabase.rpc(
+        "send_contribution_thank_you_email",
+        {
           p_contribution_id: contributionId,
-        });
+        },
+      );
 
       if (emailError) {
         console.error("Error queuing thank you email:", emailError);
       } else if (emailResult?.success) {
-        console.log("Thank you email queued successfully:", emailResult.email_log_id);
+        console.log(
+          "Thank you email queued successfully:",
+          emailResult.email_log_id,
+        );
         console.log("Email will be sent to:", emailResult.recipient);
 
         // Send the email using Supabase Edge Function
         const emailData = emailResult.email_data;
 
         try {
-          const { data: sendResult, error: sendError } = await supabase.functions.invoke(
-            'send-email-sendgrid',
-            {
+          const { data: sendResult, error: sendError } =
+            await supabase.functions.invoke("send-email-sendgrid", {
               body: {
                 to: emailResult.recipient,
-                subject: 'Thank You for Your Contribution to The Dink House! 🎉',
+                subject:
+                  "Thank You for Your Contribution to The Dink House! 🎉",
                 html: generateContributionEmailHTML(emailData),
                 text: generateContributionEmailText(emailData),
               },
-            }
-          );
+            });
 
           if (sendError) {
             console.error("Error sending email via SendGrid:", sendError);
 
             // Update email log to failed
             await supabase
-              .from('email_logs')
+              .from("email_logs")
               .update({
-                status: 'failed',
-                error_message: sendError.message || 'SendGrid function error'
+                status: "failed",
+                error_message: sendError.message || "SendGrid function error",
               })
-              .eq('id', emailResult.email_log_id);
+              .eq("id", emailResult.email_log_id);
           } else {
             console.log("Email sent successfully via SendGrid:", sendResult);
 
             // Update email log to sent
             await supabase
-              .from('email_logs')
+              .from("email_logs")
               .update({
-                status: 'sent',
+                status: "sent",
                 sent_at: new Date().toISOString(),
-                provider_message_id: sendResult?.messageId || null
+                provider_message_id: sendResult?.messageId || null,
               })
-              .eq('id', emailResult.email_log_id);
+              .eq("id", emailResult.email_log_id);
           }
         } catch (sendErr) {
           console.error("Exception sending email:", sendErr);
 
           // Update email log to failed
           await supabase
-            .from('email_logs')
+            .from("email_logs")
             .update({
-              status: 'failed',
-              error_message: sendErr instanceof Error ? sendErr.message : 'Unknown error'
+              status: "failed",
+              error_message:
+                sendErr instanceof Error ? sendErr.message : "Unknown error",
             })
-            .eq('id', emailResult.email_log_id);
+            .eq("id", emailResult.email_log_id);
         }
       } else {
         console.error("Failed to queue thank you email:", emailResult?.error);
@@ -506,6 +527,7 @@ async function handleChargeRefunded(
 
   if (fetchError || !contribution) {
     console.error("Error finding contribution for refund:", fetchError);
+
     return;
   }
 
@@ -520,6 +542,7 @@ async function handleChargeRefunded(
 
   if (updateError) {
     console.error("Error updating contribution on refund:", updateError);
+
     return;
   }
 

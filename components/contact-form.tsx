@@ -192,86 +192,51 @@ const ContactFormModal: React.FC<ContactFormModalProps> = ({
     setSubmitStatus("idle");
 
     try {
-      // Use GraphQL API instead of REST API
-      const APPSYNC_API_URL = process.env.NEXT_PUBLIC_APPSYNC_API_URL;
-      const APPSYNC_API_KEY = process.env.NEXT_PUBLIC_APPSYNC_API_KEY;
-
-      if (!APPSYNC_API_URL || !APPSYNC_API_KEY) {
-        throw new Error("API configuration is missing");
-      }
-
-      const mutation = `
-        mutation SubmitContact($input: SubmitContactInput!) {
-          submitContact(input: $input) {
-            id
-            inquiry_id
-            firstName
-            lastName
-            email
-            phone
-            company
-            jobTitle
-            subject
-            message
-            status
-            createdAt
-          }
-        }
-      `;
-
-      const response = await fetch(APPSYNC_API_URL, {
+      const response = await fetch("/api/contact-form", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": APPSYNC_API_KEY,
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          query: mutation,
-          variables: {
-            input: {
-              firstName: formData.firstName.trim(),
-              lastName: formData.lastName.trim(),
-              email: formData.email.trim().toLowerCase(),
-              phone: formData.phone?.trim() || undefined,
-              company: formData.company?.trim() || undefined,
-              jobTitle: undefined, // Not collected in this form, but available in schema
-              subject: formData.subject?.trim() || "General Inquiry",
-              message: formData.message.trim(),
-            },
-          },
+          firstName: formData.firstName.trim(),
+          lastName: formData.lastName.trim(),
+          email: formData.email.trim().toLowerCase(),
+          phone: formData.phone?.trim() || undefined,
+          company: formData.company?.trim() || undefined,
+          subject: formData.subject?.trim() || "General Inquiry",
+          message: formData.message.trim(),
+          _honeypot: formData._honeypot,
         }),
       });
 
-      const result = await response.json();
+      const result = (await response.json()) as {
+        success?: boolean;
+        message?: string;
+      };
 
-      if (result.errors) {
+      if (!response.ok || !result.success) {
         setSubmitStatus("error");
         setErrors({
-          submit: result.errors[0]?.message || "Failed to send message",
+          submit: result.message || "Failed to send message",
         });
-      } else if (result.data?.submitContact) {
-        setSubmitStatus("success");
-        // Clear localStorage on successful submission
-        localStorage.removeItem(STORAGE_KEY);
-        // Clear form after successful submission
-        setTimeout(() => {
-          onClose();
-          setSubmitStatus("idle");
-          setFormData({
-            firstName: "",
-            lastName: "",
-            email: "",
-            message: "",
-            phone: "",
-            company: "",
-            subject: "",
-            _honeypot: "",
-          });
-        }, 3000);
-      } else {
-        setSubmitStatus("error");
-        setErrors({ submit: "Failed to send message" });
+
+        return;
       }
+
+      setSubmitStatus("success");
+      localStorage.removeItem(STORAGE_KEY);
+      setTimeout(() => {
+        onClose();
+        setSubmitStatus("idle");
+        setFormData({
+          firstName: "",
+          lastName: "",
+          email: "",
+          message: "",
+          phone: "",
+          company: "",
+          subject: "",
+          _honeypot: "",
+        });
+      }, 3000);
     } catch (error) {
       setSubmitStatus("error");
       setErrors({

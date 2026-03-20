@@ -12,19 +12,19 @@ interface Benefit {
 
 export function formatBenefit(benefit: Benefit): string {
   // If benefit is already a simple string object, return it
-  if (typeof benefit === 'string') {
+  if (typeof benefit === "string") {
     return benefit;
   }
 
   // If benefit.text doesn't contain field markers, return as-is
-  if (!benefit.text || typeof benefit.text !== 'string') {
-    return '';
+  if (!benefit.text || typeof benefit.text !== "string") {
+    return "";
   }
 
   const text = benefit.text;
 
   // Check if text contains object notation (e.g., "{text=...}")
-  if (!text.includes('{') && !text.includes('=')) {
+  if (!text.includes("{") && !text.includes("=")) {
     return text;
   }
 
@@ -34,8 +34,10 @@ export function formatBenefit(benefit: Benefit): string {
 
   // Extract key=value pairs from the text
   const matches = text.matchAll(/(\w+)=([^,}]+)/g);
+
   for (const match of matches) {
     const [, key, value] = match;
+
     benefitData[key] = value.trim();
   }
 
@@ -50,7 +52,9 @@ export function formatBenefit(benefit: Benefit): string {
 
   // Add quantity if present and greater than 1
   if (quantity) {
-    const quantityNum = typeof quantity === 'number' ? quantity : parseInt(quantity, 10);
+    const quantityNum =
+      typeof quantity === "number" ? quantity : parseInt(quantity, 10);
+
     if (!isNaN(quantityNum) && quantityNum > 1) {
       return `${displayText} (${quantity})`;
     }

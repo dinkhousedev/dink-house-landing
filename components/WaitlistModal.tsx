@@ -69,62 +69,35 @@ const WaitlistModal: React.FC<WaitlistModalProps> = ({ isOpen, onClose }) => {
     setSubmitStatus("idle");
 
     try {
-      // Use GraphQL API instead of REST API
-      const APPSYNC_API_URL = process.env.NEXT_PUBLIC_APPSYNC_API_URL;
-      const APPSYNC_API_KEY = process.env.NEXT_PUBLIC_APPSYNC_API_KEY;
-
-      if (!APPSYNC_API_URL || !APPSYNC_API_KEY) {
-        throw new Error("API configuration is missing");
-      }
-
-      const mutation = `
-        mutation SubscribeNewsletter($input: SubscribeNewsletterInput!) {
-          subscribeNewsletter(input: $input) {
-            id
-            email
-            firstName
-            lastName
-            name
-            status
-            subscribed_at
-          }
-        }
-      `;
-
-      const response = await fetch(APPSYNC_API_URL, {
+      const response = await fetch("/api/subscribers", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": APPSYNC_API_KEY,
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          query: mutation,
-          variables: {
-            input: {
-              email: formData.email.trim().toLowerCase(),
-              firstName: formData.firstName.trim(),
-              lastName: formData.lastName.trim(),
-            },
-          },
+          email: formData.email.trim().toLowerCase(),
+          firstName: formData.firstName.trim(),
+          lastName: formData.lastName.trim(),
+          source: "website",
         }),
       });
 
-      const result = await response.json();
+      const result = (await response.json()) as {
+        success?: boolean;
+        duplicate?: boolean;
+        error?: string;
+      };
 
-      if (result.errors) {
-        // Check if the error is due to duplicate subscription
-        const errorMessage = result.errors[0]?.message || "";
+      if (!response.ok) {
+        setSubmitStatus("error");
+        setErrors({
+          submit: result.error || "Something went wrong. Please try again.",
+        });
 
-        if (
-          errorMessage.includes("already subscribed") ||
-          errorMessage.includes("duplicate")
-        ) {
-          setSubmitStatus("duplicate");
-        } else {
-          setSubmitStatus("error");
-          setErrors({ submit: errorMessage || "Something went wrong" });
-        }
-      } else if (result.data?.subscribeNewsletter) {
+        return;
+      }
+
+      if (result.duplicate) {
+        setSubmitStatus("duplicate");
+      } else if (result.success) {
         setSubmitStatus("success");
         setFormData({ firstName: "", lastName: "", email: "" });
         setAcceptNotifications(false);
@@ -137,7 +110,7 @@ const WaitlistModal: React.FC<WaitlistModalProps> = ({ isOpen, onClose }) => {
         }, 3000);
       } else {
         setSubmitStatus("error");
-        setErrors({ submit: "Something went wrong" });
+        setErrors({ submit: result.error || "Something went wrong" });
       }
     } catch (error) {
       const message =

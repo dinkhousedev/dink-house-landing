@@ -11,7 +11,7 @@ frontend:
         - npm --version
 
         # Secrets: set STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, SUPABASE_SERVICE_KEY,
-        # NEXT_PUBLIC_* vars in Amplify Console → Environment variables (per branch).
+        # NEXT_PUBLIC_* vars in Amplify Console.
         # SSM Parameter Store requires IAM ssm:GetParameter on those parameters for the build role;
         # fetching via `aws ssm` in this file was removed to avoid AccessDenied during install.
         - echo "Using environment variables from Amplify (configure in Console for this branch)"

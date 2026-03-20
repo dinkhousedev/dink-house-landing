@@ -29,63 +29,33 @@ export default function NewsletterForm() {
     setMessage(null);
 
     try {
-      // Use GraphQL API instead of REST API
-      const APPSYNC_API_URL = process.env.NEXT_PUBLIC_APPSYNC_API_URL;
-      const APPSYNC_API_KEY = process.env.NEXT_PUBLIC_APPSYNC_API_KEY;
-
-      if (!APPSYNC_API_URL || !APPSYNC_API_KEY) {
-        throw new Error("API configuration is missing");
-      }
-
-      const mutation = `
-        mutation SubscribeNewsletter($input: SubscribeNewsletterInput!) {
-          subscribeNewsletter(input: $input) {
-            id
-            email
-            firstName
-            lastName
-            name
-            status
-            subscribed_at
-          }
-        }
-      `;
-
-      const response = await fetch(APPSYNC_API_URL, {
+      const response = await fetch("/api/subscribers", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": APPSYNC_API_KEY,
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          query: mutation,
-          variables: {
-            input: {
-              email: email.trim().toLowerCase(),
-              firstName: firstName.trim(),
-              lastName: lastName.trim(),
-            },
-          },
+          email: email.trim().toLowerCase(),
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          source: "website",
         }),
       });
 
-      const result = await response.json();
+      const result = (await response.json()) as {
+        success?: boolean;
+        duplicate?: boolean;
+        error?: string;
+      };
 
-      if (result.errors) {
-        const errorMessage = result.errors[0]?.message || "";
+      if (!response.ok) {
+        throw new Error(result.error || "Something went wrong");
+      }
 
-        if (
-          errorMessage.includes("already subscribed") ||
-          errorMessage.includes("duplicate")
-        ) {
-          setMessage({
-            type: "success",
-            text: "You are already subscribed to our newsletter!",
-          });
-        } else {
-          throw new Error(errorMessage);
-        }
-      } else if (result.data?.subscribeNewsletter) {
+      if (result.duplicate) {
+        setMessage({
+          type: "success",
+          text: "You are already subscribed to our newsletter!",
+        });
+      } else if (result.success) {
         setMessage({
           type: "success",
           text: "Welcome to The Dink House! 🎾 Check your email for updates on our launch.",
@@ -95,7 +65,7 @@ export default function NewsletterForm() {
         setEmail("");
         setAcceptNotifications(false);
       } else {
-        throw new Error("Failed to subscribe");
+        throw new Error(result.error || "Failed to subscribe");
       }
     } catch (error) {
       setMessage({
