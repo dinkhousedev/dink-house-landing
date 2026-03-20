@@ -18,6 +18,11 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ""
 );
 
+/** Supabase `data` should be an array; normalize so `.forEach` / `.find` never throw on bad shapes. */
+function asArray<T>(value: unknown): T[] {
+  return Array.isArray(value) ? (value as T[]) : [];
+}
+
 interface CampaignType {
   id: string;
   name: string;
@@ -113,7 +118,7 @@ export default function CampaignPage() {
         throw campaignsError;
       }
 
-      setCampaigns(campaignsData || []);
+      setCampaigns(asArray<CampaignType>(campaignsData));
 
       const { data: tiersData, error: tiersError } = await supabase
         .from("contribution_tiers")
@@ -129,7 +134,7 @@ export default function CampaignPage() {
       }
 
       const tiersByCampaign: Record<string, ContributionTier[]> = {};
-      (tiersData || []).forEach((tier) => {
+      asArray<ContributionTier>(tiersData).forEach((tier) => {
         if (!tiersByCampaign[tier.campaign_type_id]) {
           tiersByCampaign[tier.campaign_type_id] = [];
         }
@@ -159,7 +164,7 @@ export default function CampaignPage() {
         .order("total_contributed", { ascending: false });
 
       if (error) throw error;
-      setFounders(data || []);
+      setFounders(asArray<FounderEntry>(data));
     } catch (error) {
       console.error("Error fetching founders:", error);
     }
