@@ -3,24 +3,15 @@ frontend:
   phases:
     preBuild:
       commands:
-        # Set production environment explicitly
-        - export NODE_ENV=production
         - export NEXT_TELEMETRY_DISABLED=1
         - echo "Building for branch $AWS_BRANCH - Node version:"
         - node --version
         - npm --version
 
-        # Secrets: set STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, SUPABASE_SERVICE_KEY,
-        # NEXT_PUBLIC_* vars in Amplify Console.
-        # SSM Parameter Store requires IAM ssm:GetParameter on those parameters for the build role;
-        # fetching via `aws ssm` in this file was removed to avoid AccessDenied during install.
-        - echo "Using environment variables from Amplify (configure in Console for this branch)"
-
+        # Install ALL dependencies (including dev) so build tools resolve correctly
         - npm ci
 
-        # Verify no debug packages are in production dependencies
-        - echo "Verifying production dependencies..."
-        - npm list --production --depth=0 || true
+        - echo "Dependencies installed"
 
     build:
       commands:
