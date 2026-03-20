@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 
 import DefaultLayout from "@/layouts/default";
-import { logger } from "@/lib/logger";
+import { logger } from "../lib/logger";
 
 const API_URL =
   process.env.NEXT_PUBLIC_SUPABASE_URL ||

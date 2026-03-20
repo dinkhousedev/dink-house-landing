@@ -61,8 +61,6 @@ const nextConfig = {
   poweredByHeader: false,
   // Disable source maps in production for security and performance
   productionBrowserSourceMaps: false,
-  // Optimize production output
-  output: "standalone",
   // Disable x-powered-by header
   generateBuildId: async () => {
     // Use commit hash or timestamp for production builds

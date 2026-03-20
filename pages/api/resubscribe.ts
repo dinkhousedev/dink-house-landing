@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 
-import { logger } from "@/lib/logger";
+import { logger } from "../../lib/logger";
 
 type ResubscribeData = {
   email: string;
