@@ -1,5 +1,12 @@
 FROM node:20-alpine AS base
-RUN apk add --no-cache libc6-compat openssl wget
+# Retry apk — Coolify builders sometimes hit transient Alpine CDN/DNS errors
+RUN set -eux; \
+  for i in 1 2 3 4 5 6 7 8 9 10; do \
+    apk add --no-cache libc6-compat openssl && break; \
+    echo "apk add failed (attempt $i/10), retrying..."; \
+    sleep 3; \
+  done; \
+  command -v wget >/dev/null
 
 FROM base AS deps
 WORKDIR /app
