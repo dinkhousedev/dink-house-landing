@@ -1,10 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 
+import { getBackendUrl } from "../../lib/backend";
 import { logger } from "../../lib/logger";
-
-type ResubscribeData = {
-  email: string;
-};
 
 type ApiResponse = {
   success: boolean;
@@ -29,7 +26,7 @@ export default async function handler(
   try {
     const { email } = req.body;
 
-    if (!email || !email.trim()) {
+    if (!email || !String(email).trim()) {
       return res.status(400).json({
         success: false,
         message: "Validation error",
@@ -37,96 +34,26 @@ export default async function handler(
       });
     }
 
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-    if (!emailRegex.test(email)) {
-      return res.status(400).json({
-        success: false,
-        message: "Validation error",
-        error: "Invalid email format",
-      });
-    }
-
-    const resubscribeData: ResubscribeData = {
-      email: email.trim().toLowerCase(),
-    };
-
-    // Call the Supabase API endpoint
-    const SUPABASE_URL =
-      process.env.NEXT_PUBLIC_SUPABASE_URL || "https://api.dinkhousepb.com";
-    const ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
-
     const response = await fetch(
-      `${SUPABASE_URL}/rest/v1/rpc/resubscribe_newsletter`,
+      `${getBackendUrl()}/api/newsletter/resubscribe`,
       {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          apikey: ANON_KEY,
-        },
-        body: JSON.stringify({
-          p_email: resubscribeData.email,
-        }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: String(email).trim().toLowerCase() }),
       },
     );
 
-    const result = await response.json();
+    const result = (await response.json()) as ApiResponse;
 
-    // Log the actual response for debugging
-    logger.info("Resubscribe API Response:", JSON.stringify(result, null, 2));
-
-    if (!response.ok) {
-      logger.error("API returned non-OK status:", response.status, result);
-      throw new Error(result.message || "Failed to resubscribe");
-    }
-
-    // Check if result is the direct response or wrapped
-    const actualResult = result.success !== undefined ? result : result;
-
-    if (actualResult.success) {
-      if (actualResult.already_subscribed) {
-        return res.status(200).json({
-          success: true,
-          already_subscribed: true,
-          message: actualResult.message || "You are already subscribed!",
-        });
-      }
-
-      logger.info(
-        "Newsletter resubscribe successful:",
-        actualResult.subscriber_id,
-      );
-
-      return res.status(200).json({
-        success: true,
-        message:
-          actualResult.message ||
-          "Thank you for resubscribing! You will now receive our newsletter updates.",
-      });
-    } else {
-      // Handle "not found" case
-      if (actualResult.message?.includes("not found")) {
-        return res.status(200).json({
-          success: false,
-          not_found: true,
-          message: actualResult.message,
-        });
-      }
-
-      logger.error("API returned success: false", actualResult);
-      throw new Error(actualResult.message || "Resubscription failed");
-    }
+    return res.status(response.status).json(result);
   } catch (error) {
     logger.error("Error processing resubscribe request:", error);
-
-    // Provide more helpful error message
-    const errorMessage =
-      error instanceof Error ? error.message : "Unknown error";
 
     return res.status(500).json({
       success: false,
       message: "Internal server error",
-      error: `Failed to process resubscribe request: ${errorMessage}`,
+      error:
+        error instanceof Error ? error.message : "Failed to process resubscribe",
     });
   }
 }

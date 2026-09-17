@@ -5,26 +5,13 @@ import { Card, CardBody, CardHeader } from "@heroui/react";
 import { Progress } from "@heroui/react";
 import { Chip } from "@heroui/chip";
 import { Icon } from "@iconify/react";
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import Image from "next/image";
 import { LazyMotion, domAnimation, m } from "framer-motion";
 
 import DefaultLayout from "@/layouts/default";
 import ContributionModal from "@/components/ContributionModal";
 
-let supabaseClient: SupabaseClient | null = null;
-
-function getSupabase(): SupabaseClient | null {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-  if (!url || !key) return null;
-  if (!supabaseClient) supabaseClient = createClient(url, key);
-
-  return supabaseClient;
-}
-
-/** Supabase `data` should be an array; normalize so `.forEach` / `.find` never throw on bad shapes. */
+/** Normalize so `.forEach` / `.find` never throw on bad shapes. */
 function asArray<T>(value: unknown): T[] {
   return Array.isArray(value) ? (value as T[]) : [];
 }
@@ -112,63 +99,25 @@ export default function CampaignPage() {
 
   const fetchCampaignData = async () => {
     try {
-      const supabase = getSupabase();
+      const response = await fetch("/api/crowdfunding/campaigns");
+      const payload = await response.json();
 
-      if (!supabase) {
-        console.warn(
-          "Supabase env not set (NEXT_PUBLIC_SUPABASE_URL / ANON_KEY)",
-        );
-
-        return;
+      if (!response.ok || !payload.success) {
+        throw new Error(payload.error || "Failed to load campaigns");
       }
 
-      console.log("Fetching campaigns from Supabase...");
-      console.log("Supabase URL:", process.env.NEXT_PUBLIC_SUPABASE_URL);
-
-      const { data: campaignsData, error: campaignsError } = await supabase
-        .from("campaign_types")
-        .select("*")
-        .eq("is_active", true)
-        .order("display_order");
-
-      console.log("Campaigns response:", { campaignsData, campaignsError });
-
-      if (campaignsError) {
-        console.error("Campaign error:", campaignsError);
-        throw campaignsError;
-      }
-
-      setCampaigns(asArray<CampaignType>(campaignsData));
-
-      const { data: tiersData, error: tiersError } = await supabase
-        .from("contribution_tiers")
-        .select("*")
-        .eq("is_active", true)
-        .order("display_order");
-
-      console.log("Tiers response:", { tiersData, tiersError });
-
-      if (tiersError) {
-        console.error("Tiers error:", tiersError);
-        throw tiersError;
-      }
+      setCampaigns(asArray<CampaignType>(payload.campaigns));
 
       const tiersByCampaign: Record<string, ContributionTier[]> = {};
 
-      asArray<ContributionTier>(tiersData).forEach((tier) => {
+      asArray<ContributionTier>(payload.tiers).forEach((tier) => {
         if (!tiersByCampaign[tier.campaign_type_id]) {
           tiersByCampaign[tier.campaign_type_id] = [];
-        }
-        // Debug: Log first tier's benefits
-        if (Object.keys(tiersByCampaign).length === 0) {
-          console.log("First tier benefits:", tier.benefits);
         }
         tiersByCampaign[tier.campaign_type_id].push(tier);
       });
 
       setTiers(tiersByCampaign);
-      console.log("Campaigns loaded:", campaignsData?.length);
-      console.log("Tiers loaded:", tiersData?.length);
     } catch (error) {
       console.error("Error fetching campaign data:", error);
     } finally {
@@ -178,18 +127,14 @@ export default function CampaignPage() {
 
   const fetchFounders = async () => {
     try {
-      const supabase = getSupabase();
+      const response = await fetch("/api/crowdfunding/founders-wall");
+      const payload = await response.json();
 
-      if (!supabase) return;
+      if (!response.ok || !payload.success) {
+        throw new Error(payload.error || "Failed to load founders wall");
+      }
 
-      const { data, error } = await supabase
-        .from("founders_wall")
-        .select("*")
-        .order("is_featured", { ascending: false })
-        .order("total_contributed", { ascending: false });
-
-      if (error) throw error;
-      setFounders(asArray<FounderEntry>(data));
+      setFounders(asArray<FounderEntry>(payload.founders));
     } catch (error) {
       console.error("Error fetching founders:", error);
     }

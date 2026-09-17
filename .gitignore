@@ -2,6 +2,7 @@
 
 # dependencies
 /node_modules
+backend/node_modules
 /.pnp
 .pnp.js
 
@@ -51,3 +52,6 @@ AMPLIFY_ENV_VARS.md
 .env.production
 .env.production
 next.config.js
+# Local DB dumps
+data-export/
+dink-house-db-export.zip

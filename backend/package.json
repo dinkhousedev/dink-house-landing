@@ -1,0 +1,29 @@
+{
+  "name": "dink-house-landing-backend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "prisma:generate": "prisma generate",
+    "prisma:pull": "prisma db pull"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.16.2",
+    "@sendgrid/mail": "^8.1.6",
+    "cors": "^2.8.5",
+    "dotenv": "^16.6.1",
+    "express": "^4.21.2",
+    "stripe": "^19.0.0",
+    "prisma": "^6.16.2"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^4.17.23",
+    "@types/node": "^22.18.1",
+    "tsx": "^4.20.5",
+    "typescript": "^5.9.2"
+  }
+}

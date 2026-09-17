@@ -4,11 +4,6 @@ import { useRouter } from "next/router";
 import DefaultLayout from "@/layouts/default";
 import { logger } from "../lib/logger";
 
-const API_URL =
-  process.env.NEXT_PUBLIC_SUPABASE_URL ||
-  "https://wchxzbuuwssrnaxshseu.supabase.co";
-const ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
-
 export default function Unsubscribe() {
   const router = useRouter();
   const { token, email } = router.query;
@@ -33,21 +28,15 @@ export default function Unsubscribe() {
     setStatus("loading");
 
     try {
-      const response = await fetch(
-        `${API_URL}/rest/v1/rpc/unsubscribe_newsletter`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            apikey: ANON_KEY,
-          },
-          body: JSON.stringify({
-            p_unsubscribe_token: token || null,
-            p_email: email || null,
-            p_reason: reason || null,
-          }),
-        },
-      );
+      const response = await fetch("/api/newsletter/unsubscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          token: token || null,
+          email: email || null,
+          reason: reason || null,
+        }),
+      });
 
       const result = await response.json();
 

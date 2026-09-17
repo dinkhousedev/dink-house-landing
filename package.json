@@ -7,7 +7,10 @@
     "build": "next build",
     "build:production": "next build",
     "start": "next start",
-    "lint": "eslint --fix"
+    "lint": "eslint --fix",
+    "backend": "npm run dev --prefix backend",
+    "backend:build": "npm run build --prefix backend",
+    "dev:all": "echo \"Run: npm run backend (terminal 1) and npm run dev (terminal 2)\""
   },
   "dependencies": {
     "@heroui/accordion": "^2.2.23",

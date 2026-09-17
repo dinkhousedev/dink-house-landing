@@ -2,43 +2,30 @@ import type { NextApiRequest, NextApiResponse } from "next";
 
 import { getBackendUrl } from "../../../lib/backend";
 
-interface ApiResponse {
-  success: boolean;
-  url?: string;
-  error?: string;
-  debug?: string;
-}
-
 export default async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<ApiResponse>,
+  res: NextApiResponse,
 ) {
   if (req.method !== "POST") {
-    return res.status(405).json({
-      success: false,
-      error: "Method not allowed",
-    });
+    return res.status(405).json({ success: false, message: "Method not allowed" });
   }
 
   try {
     const response = await fetch(
-      `${getBackendUrl()}/api/stripe/create-checkout`,
+      `${getBackendUrl()}/api/newsletter/unsubscribe`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(req.body),
       },
     );
-
-    const data = (await response.json()) as ApiResponse;
+    const data = await response.json();
 
     return res.status(response.status).json(data);
   } catch (error) {
-    console.error("Error proxying create-checkout:", error);
-
     return res.status(502).json({
       success: false,
-      error: error instanceof Error ? error.message : "Backend unavailable",
+      message: error instanceof Error ? error.message : "Backend unavailable",
     });
   }
 }

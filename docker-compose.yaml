@@ -1,19 +1,68 @@
+# Coolify Docker Compose — Next.js landing + Prisma Express backend
+# In Coolify: New Resource → Docker Compose → point at this repo / docker-compose.yaml
+#
+# Public domain goes on `web` only. `backend` stays on the internal coolify network;
+# Next proxies /api/* → http://backend:3001
+
 services:
-  app:
+  web:
     build:
       context: .
       dockerfile: Dockerfile
     expose:
       - "3000"
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      HOSTNAME: "0.0.0.0"
+      # Internal Coolify service DNS — do not use the public site URL here
+      BACKEND_URL: http://backend:3001
+      NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-https://thedinkhousepb.com}
+      SITE_URL: ${SITE_URL:-https://thedinkhousepb.com}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
+      NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY:-}
+      RATE_LIMIT_PER_MINUTE: ${RATE_LIMIT_PER_MINUTE:-5}
+      RATE_LIMIT_PER_HOUR: ${RATE_LIMIT_PER_HOUR:-50}
+    depends_on:
+      backend:
+        condition: service_healthy
     restart: unless-stopped
     networks:
       - coolify
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000"]
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:3000"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 15s
+      start_period: 40s
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    expose:
+      - "3001"
+    environment:
+      NODE_ENV: production
+      PORT: "3001"
+      HOSTNAME: "0.0.0.0"
+      DATABASE_URL: ${DATABASE_URL}
+      SITE_URL: ${SITE_URL:-https://thedinkhousepb.com}
+      CORS_ORIGIN: ${CORS_ORIGIN:-https://thedinkhousepb.com,https://www.thedinkhousepb.com}
+      STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
+      STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
+      SENDGRID_API_KEY: ${SENDGRID_API_KEY}
+      SENDGRID_FROM_EMAIL: ${SENDGRID_FROM_EMAIL:-support@thedinkhouse.com}
+    restart: unless-stopped
+    networks:
+      - coolify
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:3001/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 25s
 
 networks:
   coolify:

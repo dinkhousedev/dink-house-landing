@@ -4,11 +4,6 @@ import { useRouter } from "next/router";
 import DefaultLayout from "@/layouts/default";
 import { logger } from "../lib/logger";
 
-const API_URL =
-  process.env.NEXT_PUBLIC_SUPABASE_URL ||
-  "https://wchxzbuuwssrnaxshseu.supabase.co";
-const ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
-
 export default function ConfirmSubscription() {
   const router = useRouter();
   const { token } = router.query;
@@ -24,19 +19,11 @@ export default function ConfirmSubscription() {
 
     const confirmSubscription = async () => {
       try {
-        const response = await fetch(
-          `${API_URL}/rest/v1/rpc/confirm_newsletter_subscription`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              apikey: ANON_KEY,
-            },
-            body: JSON.stringify({
-              p_verification_token: token,
-            }),
-          },
-        );
+        const response = await fetch("/api/newsletter/confirm", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token }),
+        });
 
         const result = await response.json();
 
