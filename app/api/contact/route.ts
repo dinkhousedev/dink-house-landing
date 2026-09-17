@@ -3,6 +3,8 @@ import { NextResponse, type NextRequest } from "next/server";
 import { logger } from "../../../lib/logger";
 import { upsertLaunchSubscriber } from "../../../lib/backend-forms";
 
+export const dynamic = "force-dynamic";
+
 type ContactData = {
   firstName: string;
   lastName: string;

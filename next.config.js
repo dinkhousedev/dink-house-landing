@@ -6,16 +6,9 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   env: {
-    DB_HOST: process.env.DB_HOST,
-    DB_PORT: process.env.DB_PORT,
-    DB_NAME: process.env.DB_NAME,
-    DB_USER: process.env.DB_USER,
-    DB_PASSWORD: process.env.DB_PASSWORD,
-    DB_SSL: process.env.DB_SSL,
-    STRIPE_SECRET_KEY: process.env.STRIPE_SECRET_KEY,
-    STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET,
-    CONTACT_EMAIL: process.env.CONTACT_EMAIL,
-    FROM_EMAIL: process.env.FROM_EMAIL,
+    // Public / non-secret only. Do not put API keys or DB credentials here —
+    // next.config `env` inlines values into the JS bundle at build time, which
+    // also makes Coolify inject them as Docker ARG (SecretsUsedInArgOrEnv).
     SITE_URL: process.env.SITE_URL,
     RATE_LIMIT_PER_MINUTE: process.env.RATE_LIMIT_PER_MINUTE,
     RATE_LIMIT_PER_HOUR: process.env.RATE_LIMIT_PER_HOUR,

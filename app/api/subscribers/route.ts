@@ -3,6 +3,8 @@ import { NextResponse, type NextRequest } from "next/server";
 import { logger } from "../../../lib/logger";
 import { upsertLaunchSubscriber } from "../../../lib/backend-forms";
 
+export const dynamic = "force-dynamic";
+
 export async function POST(req: NextRequest) {
   try {
     const body = (await req.json()) as Record<string, unknown>;

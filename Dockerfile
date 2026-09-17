@@ -21,6 +21,8 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
+# Do not ARG/ENV secrets (DATABASE_URL, STRIPE_*, BREVO_*). Coolify injects
+# those at container runtime. Prisma is lazy so `next build` does not need them.
 # Prisma generate again in case schema changed vs lockfile stage
 RUN npx prisma generate
 RUN npm run build

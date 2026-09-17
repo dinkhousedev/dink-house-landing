@@ -17,8 +17,28 @@ function createPrismaClient(): PrismaClient {
   });
 }
 
-export const prisma = globalForPrisma.prisma ?? createPrismaClient();
+function getPrismaClient(): PrismaClient {
+  if (!globalForPrisma.prisma) {
+    globalForPrisma.prisma = createPrismaClient();
+  }
 
-if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prisma = prisma;
+  return globalForPrisma.prisma;
 }
+
+/**
+ * Lazy proxy so `next build` can import API routes without DATABASE_URL.
+ * Coolify keeps that secret as a runtime env var, so it is absent during
+ * Docker image build / "Collecting page data".
+ */
+export const prisma = new Proxy({} as PrismaClient, {
+  get(_target, prop) {
+    if (prop === "then" || prop === "$$typeof") {
+      return undefined;
+    }
+
+    const client = getPrismaClient();
+    const value = Reflect.get(client, prop, client);
+
+    return typeof value === "function" ? value.bind(client) : value;
+  },
+});

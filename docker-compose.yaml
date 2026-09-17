@@ -4,7 +4,8 @@
 # 1. Domain on service `web` only: https://thedinkhousepb.com:3000
 # 2. Do NOT set a shared PORT env var
 # 3. DATABASE_URL must be Runtime (not Build-only) and enabled for BOTH web + backend
-# 4. No custom networks: block — Coolify manages the stack network
+# 4. Uncheck "Available at Buildtime" for secrets (STRIPE_*, BREVO_*, SENDGRID_*, DATABASE_URL)
+# 5. No custom networks: block — Coolify manages the stack network
 
 services:
   web:

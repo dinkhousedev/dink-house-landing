@@ -3,6 +3,8 @@ import { NextResponse, type NextRequest } from "next/server";
 import { logger } from "../../../lib/logger";
 import { insertContactInquiry } from "../../../lib/backend-forms";
 
+export const dynamic = "force-dynamic";
+
 const RATE_LIMIT_PER_MINUTE = parseInt(
   process.env.RATE_LIMIT_PER_MINUTE || "5",
   10,
