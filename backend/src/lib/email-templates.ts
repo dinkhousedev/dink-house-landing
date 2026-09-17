@@ -39,7 +39,7 @@ const BRAND = {
   muted: "#A3A3A3",
   name: "The Dink House",
   tagline: "Where Pickleball Lives",
-  supportEmail: "support@thedinkhouse.com",
+  supportEmail: "contact@thedinkhousepb.com",
   defaultSiteUrl: "https://thedinkhousepb.com",
   socials: [
     {
@@ -366,6 +366,102 @@ export function generateContributionEmailHTML(
     bodyHtml,
     cta: { label: "Visit The Dink House", href: origin(site_url) },
   });
+}
+
+export interface WaitlistUpdateEmailData {
+  first_name: string;
+  site_url?: string;
+  unsubscribe_url?: string;
+}
+
+export function generateWaitlistUpdateEmailHTML(
+  data: WaitlistUpdateEmailData,
+): string {
+  const siteUrl = origin(data.site_url || BRAND.defaultSiteUrl);
+  const firstName = escapeHtml(data.first_name);
+  const unsubscribeUrl = data.unsubscribe_url
+    ? escapeHtml(data.unsubscribe_url)
+    : `${siteUrl}/unsubscribe`;
+
+  const bodyHtml = `
+    <p style="margin: 0 0 16px; font-family: ${fontStack()}; font-size: 16px; line-height: 1.6; color: ${BRAND.white};">
+      Hi ${firstName},
+    </p>
+    <p style="margin: 0 0 16px; font-family: ${fontStack()}; font-size: 16px; line-height: 1.6; color: ${BRAND.white};">
+      Thank you for joining The Dink House waitlist. Your name is on the list, and that means a lot to us.
+    </p>
+    <p style="margin: 0 0 8px; font-family: ${fontStack()}; font-size: 16px; line-height: 1.6; color: ${BRAND.white};">
+      We're moving full steam ahead. Bell County's first indoor pickleball home is taking shape — 10 championship courts, year-round play, and a community that lives for the dink.
+    </p>
+    ${panel(
+      `<p style="margin: 0; font-family: ${fontStack()}; font-size: 15px; line-height: 1.6; color: ${BRAND.white};">We don't have exact dates yet, and we won't guess. When we lock in a timeline, waitlist members hear first — along with membership details and pre-opening events.</p>`,
+      "On the timeline",
+    )}
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="margin: 8px 0 24px; background-color: ${BRAND.lime};">
+      <tr>
+        <td style="padding: 22px 24px; text-align: center;">
+          <p style="margin: 0 0 8px; font-family: ${displayStack()}; font-size: 22px; letter-spacing: 1px; color: ${BRAND.black}; text-transform: uppercase;">
+            You're on the list
+          </p>
+          <p style="margin: 0; font-family: ${fontStack()}; font-size: 15px; color: ${BRAND.black};">
+            First word on dates, memberships, and opening events.
+          </p>
+        </td>
+      </tr>
+    </table>
+    <p style="margin: 8px 0 16px; font-family: ${fontStack()}; font-size: 16px; line-height: 1.6; color: ${BRAND.white};">
+      Until then, follow along on social for behind-the-scenes from the build.
+    </p>
+    <p style="margin: 8px 0 0; font-family: ${fontStack()}; font-size: 16px; line-height: 1.6; color: ${BRAND.white};">
+      See you on the courts,<br />
+      <strong style="color: ${BRAND.lime};">The Dink House Team</strong>
+    </p>
+    <p style="margin: 28px 0 0; font-family: ${fontStack()}; font-size: 12px; line-height: 1.5; color: ${BRAND.muted};">
+      Don't want these updates? <a href="${unsubscribeUrl}" style="color: ${BRAND.lime}; text-decoration: none;">Unsubscribe</a>
+    </p>
+  `;
+
+  return renderDinkHouseEmail({
+    siteUrl,
+    preheader:
+      "Thank you for being on the waitlist. We're building full steam ahead — dates as soon as we have them.",
+    eyebrow: "Waitlist update",
+    heading: "Thank you. We're moving full steam ahead.",
+    bodyHtml,
+    cta: { label: "Visit The Dink House", href: siteUrl },
+  });
+}
+
+export function generateWaitlistUpdateEmailText(
+  data: WaitlistUpdateEmailData,
+): string {
+  const siteUrl = origin(data.site_url || BRAND.defaultSiteUrl);
+  const unsubscribeUrl =
+    data.unsubscribe_url || `${siteUrl}/unsubscribe`;
+
+  return `THE DINK HOUSE
+${BRAND.tagline}
+
+Hi ${data.first_name},
+
+Thank you for joining The Dink House waitlist. Your name is on the list, and that means a lot to us.
+
+We're moving full steam ahead. Bell County's first indoor pickleball home is taking shape — 10 championship courts, year-round play, and a community that lives for the dink.
+
+ON THE TIMELINE
+We don't have exact dates yet, and we won't guess. When we lock in a timeline, waitlist members hear first — along with membership details and pre-opening events.
+
+You're on the list. First word on dates, memberships, and opening events.
+
+Until then, follow along on social for behind-the-scenes from the build.
+
+See you on the courts,
+The Dink House Team
+
+Visit: ${siteUrl}
+Unsubscribe: ${unsubscribeUrl}
+Questions? ${BRAND.supportEmail}
+`;
 }
 
 export function generateContributionEmailText(

@@ -13,11 +13,12 @@ export type SendBrevoEmailParams = {
   text?: string;
   fromEmail?: string;
   fromName?: string;
+  headers?: Record<string, string>;
 };
 
 export async function sendBrevoEmail(
   params: SendBrevoEmailParams,
-): Promise<{ messageId: string | null }> {
+): Promise<{ messageId: string | null; response: string | null }> {
   const apiKey = process.env.BREVO_API_KEY;
   if (!apiKey) {
     throw new Error("BREVO_API_KEY is not set");
@@ -33,7 +34,7 @@ export async function sendBrevoEmail(
   const fromEmail =
     params.fromEmail ||
     process.env.BREVO_FROM_EMAIL ||
-    "contact@thedinkhouse.com";
+    "contact@thedinkhousepb.com";
   const fromName = params.fromName || "The Dink House";
 
   const transporter = nodemailer.createTransport({
@@ -52,7 +53,16 @@ export async function sendBrevoEmail(
     subject: params.subject,
     html: params.html,
     text: params.text,
+    headers: params.headers,
   });
 
-  return { messageId: info.messageId || null };
+  const accepted = Array.isArray(info.accepted) ? info.accepted : [];
+  const rejected = Array.isArray(info.rejected) ? info.rejected : [];
+  if (rejected.length || !accepted.length) {
+    throw new Error(
+      `SMTP did not accept ${params.to} (accepted=${accepted.join(",") || "none"} rejected=${rejected.join(",") || "none"} response=${info.response || "none"})`,
+    );
+  }
+
+  return { messageId: info.messageId || null, response: info.response || null };
 }
