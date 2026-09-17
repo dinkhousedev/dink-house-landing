@@ -1,11 +1,10 @@
 # Coolify Docker Compose — Next.js landing + Prisma Express backend
 #
 # Coolify UI checklist:
-# 1. Domain / FQDN goes on service `web` only (NOT backend) — set as https://thedinkhousepb.com:3000
-# 2. Do NOT set a shared PORT env var in Coolify (it overrides both services)
-# 3. Do NOT add a custom `networks:` block — Coolify creates a stack network so
-#    `web` can reach `backend` at http://backend:3001
-# 4. backend stays internal (no public domain)
+# 1. Domain on service `web` only: https://thedinkhousepb.com:3000
+# 2. Do NOT set a shared PORT env var
+# 3. DATABASE_URL must be Runtime (not Build-only) and enabled for BOTH web + backend
+# 4. No custom networks: block — Coolify manages the stack network
 
 services:
   web:
@@ -16,11 +15,10 @@ services:
       - "3000"
     environment:
       NODE_ENV: production
-      # Hardcoded — do not use ${PORT}; Coolify shared PORT breaks the proxy
       PORT: "3000"
       HOSTNAME: "0.0.0.0"
       BACKEND_URL: http://backend:3001
-      # Landing APIs (subscribers/campaigns/contact) use Prisma in Next directly
+      # Required at RUNTIME on web (Prisma). In Coolify: Runtime + shared/both services.
       DATABASE_URL: ${DATABASE_URL:?}
       NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-https://thedinkhousepb.com}
       SITE_URL: ${SITE_URL:-https://thedinkhousepb.com}
@@ -29,7 +27,6 @@ services:
       NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY:-}
       RATE_LIMIT_PER_MINUTE: ${RATE_LIMIT_PER_MINUTE:-5}
       RATE_LIMIT_PER_HOUR: ${RATE_LIMIT_PER_HOUR:-50}
-    # Backend still used for Stripe checkout/webhook; don't block web on it
     depends_on:
       - backend
     restart: unless-stopped
