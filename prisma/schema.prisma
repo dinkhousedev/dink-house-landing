@@ -1,0 +1,1328 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  schemas  = ["app_auth", "contact", "crowdfunding", "events", "launch", "public", "system"]
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model admin_users {
+  id                                    String                         @id @default(dbgenerated("extensions.uuid_generate_v4()")) @db.Uuid
+  account_id                            String                         @db.Uuid
+  username                              String                         @unique @db.VarChar(50)
+  first_name                            String?                        @db.VarChar(100)
+  last_name                             String?                        @db.VarChar(100)
+  role                                  String                         @default("viewer") @db.VarChar(50)
+  permissions                           Json?                          @default("{}")
+  avatar_url                            String?
+  phone                                 String?                        @db.VarChar(20)
+  department                            String?                        @db.VarChar(100)
+  is_super_admin                        Boolean?                       @default(false)
+  last_active                           DateTime?                      @db.Timestamptz(6)
+  created_at                            DateTime?                      @default(now()) @db.Timestamptz(6)
+  updated_at                            DateTime?                      @default(now()) @db.Timestamptz(6)
+  user_accounts                         user_accounts                  @relation(fields: [account_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  players                               players[]
+  form_submissions                      form_submissions[]
+  event_templates                       event_templates[]
+  events_events_created_byToadmin_users events[]                       @relation("events_created_byToadmin_users")
+  events_events_updated_byToadmin_users events[]                       @relation("events_updated_byToadmin_users")
+  open_play_schedule_overrides          open_play_schedule_overrides[]
+
+  @@schema("app_auth")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model api_keys {
+  id            String         @id @default(dbgenerated("extensions.uuid_generate_v4()")) @db.Uuid
+  account_id    String?        @db.Uuid
+  name          String         @db.VarChar(255)
+  key_hash      String
+  permissions   Json?          @default("{}")
+  is_active     Boolean?       @default(true)
+  last_used_at  DateTime?      @db.Timestamptz(6)
+  expires_at    DateTime?      @db.Timestamptz(6)
+  created_at    DateTime?      @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime?      @default(now()) @db.Timestamptz(6)
+  user_accounts user_accounts? @relation(fields: [account_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@schema("app_auth")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model membership_transactions {
+  id                       String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  player_id                String            @db.Uuid
+  from_tier                membership_level?
+  to_tier                  membership_level
+  transaction_type         String            @db.VarChar(50)
+  amount                   Decimal           @db.Decimal(10, 2)
+  stripe_payment_intent_id String?
+  stripe_subscription_id   String?
+  payment_status           String?           @default("pending") @db.VarChar(50)
+  effective_date           DateTime          @db.Date
+  expires_date             DateTime?         @db.Date
+  notes                    String?
+  created_at               DateTime?         @default(now()) @db.Timestamptz(6)
+  updated_at               DateTime?         @default(now()) @db.Timestamptz(6)
+  players                  players           @relation(fields: [player_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([effective_date], map: "idx_membership_transactions_effective")
+  @@index([player_id], map: "idx_membership_transactions_player")
+  @@index([payment_status], map: "idx_membership_transactions_status")
+  @@index([transaction_type], map: "idx_membership_transactions_type")
+  @@schema("app_auth")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model player_fees {
+  id                       String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  player_id                String    @db.Uuid
+  fee_type                 String    @default("registration") @db.VarChar(50)
+  amount                   Decimal   @db.Decimal(10, 2)
+  stripe_payment_intent_id String?
+  stripe_charge_id         String?
+  payment_status           String?   @default("pending") @db.VarChar(50)
+  paid_at                  DateTime? @db.Timestamptz(6)
+  notes                    String?
+  created_at               DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at               DateTime? @default(now()) @db.Timestamptz(6)
+  players                  players   @relation(fields: [player_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([player_id, fee_type], map: "uq_player_registration_fee")
+  @@index([player_id], map: "idx_player_fees_player")
+  @@index([payment_status], map: "idx_player_fees_status")
+  @@index([fee_type], map: "idx_player_fees_type")
+  @@schema("app_auth")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model player_transactions {
+  id                       String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  player_id                String    @db.Uuid
+  stripe_payment_intent_id String?   @unique
+  stripe_charge_id         String?
+  stripe_refund_id         String?
+  amount                   Decimal   @db.Decimal(10, 2)
+  currency                 String?   @default("usd") @db.VarChar(3)
+  status                   String    @default("pending") @db.VarChar(50)
+  description              String?
+  payment_method           String?   @db.VarChar(50)
+  metadata                 Json?     @default("{}")
+  created_at               DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at               DateTime? @default(now()) @db.Timestamptz(6)
+  refunded_at              DateTime? @db.Timestamptz(6)
+  refund_amount            Decimal?  @db.Decimal(10, 2)
+  refund_reason            String?
+  players                  players   @relation(fields: [player_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([created_at(sort: Desc)], map: "idx_transactions_created_at")
+  @@index([player_id], map: "idx_transactions_player_id")
+  @@index([status], map: "idx_transactions_status")
+  @@index([stripe_payment_intent_id], map: "idx_transactions_stripe_payment_intent")
+  @@schema("app_auth")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model players {
+  id                      String                    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  account_id              String                    @unique @db.Uuid
+  first_name              String
+  last_name               String
+  display_name            String?
+  phone                   String?
+  street_address          String?
+  date_of_birth           DateTime?                 @db.Date
+  membership_level        membership_level?         @default(guest)
+  membership_started_on   DateTime?                 @db.Date
+  membership_expires_on   DateTime?                 @db.Date
+  skill_level             app_auth_skill_level?
+  dupr_rating             Decimal?                  @db.Decimal(3, 2)
+  dupr_rating_updated_at  DateTime?                 @db.Timestamptz(6)
+  club_id                 String?                   @db.Uuid
+  profile                 Json?                     @default("{}")
+  created_at              DateTime?                 @default(now()) @db.Timestamptz(6)
+  updated_at              DateTime?                 @default(now()) @db.Timestamptz(6)
+  dupr_verified           Boolean?                  @default(false)
+  dupr_verified_by        String?                   @db.Uuid
+  dupr_verified_at        DateTime?                 @db.Timestamptz(6)
+  dupr_verification_notes String?
+  city                    String?
+  state                   String?
+  stripe_customer_id      String?                   @unique
+  gender                  gender?                   @default(male)
+  profile_picture_url     String?
+  use_default_picture     Boolean?                  @default(true)
+  backer_id               String?                   @db.Uuid
+  email                   String?                   @db.Citext
+  membership_transactions membership_transactions[]
+  player_fees             player_fees[]
+  player_transactions     player_transactions[]
+  backers                 backers?                  @relation(fields: [backer_id], references: [id], onUpdate: NoAction, map: "fk_players_backer_id")
+  user_accounts           user_accounts             @relation(fields: [account_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  admin_users             admin_users?              @relation(fields: [dupr_verified_by], references: [id], onUpdate: NoAction)
+
+  @@index([account_id], map: "idx_players_account_id")
+  @@index([backer_id], map: "idx_players_backer_id")
+  @@index([dupr_rating], map: "idx_players_dupr_rating")
+  @@index([dupr_verified], map: "idx_players_dupr_verified")
+  @@index([email], map: "idx_players_email")
+  @@index([gender], map: "idx_players_gender")
+  @@index([membership_level], map: "idx_players_membership_level")
+  @@index([stripe_customer_id], map: "idx_players_stripe_customer")
+  @@index([stripe_customer_id], map: "idx_players_stripe_customer_id")
+  @@schema("app_auth")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model user_accounts {
+  id                        String        @id @default(dbgenerated("extensions.uuid_generate_v4()")) @db.Uuid
+  email                     String        @unique @db.VarChar(255)
+  password_hash             String?
+  user_type                 user_type
+  is_active                 Boolean?      @default(true)
+  is_verified               Boolean?      @default(false)
+  verification_token        String?       @db.VarChar(255)
+  verification_expires_at   DateTime?     @db.Timestamptz(6)
+  password_reset_token      String?       @db.VarChar(255)
+  password_reset_expires_at DateTime?     @db.Timestamptz(6)
+  last_login                DateTime?     @db.Timestamptz(6)
+  created_at                DateTime?     @default(now()) @db.Timestamptz(6)
+  updated_at                DateTime?     @default(now()) @db.Timestamptz(6)
+  admin_users               admin_users[]
+  api_keys                  api_keys[]
+  players                   players?
+
+  @@index([email], map: "idx_user_accounts_email")
+  @@schema("app_auth")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model contact_inquiries {
+  id                String              @id @default(dbgenerated("extensions.uuid_generate_v4()")) @db.Uuid
+  name              String              @db.VarChar(200)
+  email             String              @db.VarChar(255)
+  phone             String?             @db.VarChar(20)
+  subject           String?             @db.VarChar(500)
+  message           String
+  inquiry_type      String?             @db.VarChar(50)
+  user_id           String?             @db.Uuid
+  status            String?             @default("new") @db.VarChar(20)
+  priority          String?             @default("normal") @db.VarChar(20)
+  assigned_to       String?             @db.Uuid
+  tags              String[]
+  metadata          Json?               @default("{}")
+  ip_address        String?             @db.Inet
+  user_agent        String?
+  referrer          String?
+  created_at        DateTime?           @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime?           @default(now()) @db.Timestamptz(6)
+  contact_responses contact_responses[]
+
+  @@index([created_at], map: "idx_inquiries_created_at")
+  @@index([email], map: "idx_inquiries_email")
+  @@index([status], map: "idx_inquiries_status")
+  @@schema("contact")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model contact_responses {
+  id                String            @id @default(dbgenerated("extensions.uuid_generate_v4()")) @db.Uuid
+  inquiry_id        String            @db.Uuid
+  responder_id      String?           @db.Uuid
+  response_text     String
+  response_type     String?           @default("email") @db.VarChar(20)
+  is_internal_note  Boolean?          @default(false)
+  created_at        DateTime?         @default(now()) @db.Timestamptz(6)
+  contact_inquiries contact_inquiries @relation(fields: [inquiry_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@schema("contact")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model form_submissions {
+  id           String       @id @default(dbgenerated("extensions.uuid_generate_v4()")) @db.Uuid
+  form_type    String       @default("contact") @db.VarChar(50)
+  first_name   String       @db.VarChar(100)
+  last_name    String       @db.VarChar(100)
+  email        String       @db.VarChar(255)
+  phone        String?      @db.VarChar(50)
+  company      String?      @db.VarChar(255)
+  subject      String?      @db.VarChar(500)
+  message      String
+  source_url   String?
+  ip_address   String?      @db.Inet
+  user_agent   String?
+  status       String?      @default("new") @db.VarChar(50)
+  assigned_to  String?      @db.Uuid
+  notes        String?
+  metadata     Json?        @default("{}")
+  created_at   DateTime?    @default(now()) @db.Timestamptz(6)
+  updated_at   DateTime?    @default(now()) @db.Timestamptz(6)
+  responded_at DateTime?    @db.Timestamptz(6)
+  admin_users  admin_users? @relation(fields: [assigned_to], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([created_at(sort: Desc)], map: "idx_contact_form_created")
+  @@index([email], map: "idx_contact_form_email")
+  @@index([status], map: "idx_contact_form_status")
+  @@index([form_type], map: "idx_contact_form_type")
+  @@schema("contact")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model backer_benefits {
+  id              String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  backer_id       String        @db.Uuid
+  contribution_id String        @db.Uuid
+  benefit_type    String        @db.VarChar(100)
+  benefit_details Json?         @default("{}")
+  is_active       Boolean?      @default(true)
+  activated_at    DateTime?     @default(now()) @db.Timestamptz(6)
+  expires_at      DateTime?     @db.Timestamptz(6)
+  redeemed_count  Int?          @default(0)
+  metadata        Json?         @default("{}")
+  created_at      DateTime?     @default(now()) @db.Timestamptz(6)
+  backers         backers       @relation(fields: [backer_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  contributions   contributions @relation(fields: [contribution_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([is_active], map: "idx_benefits_active")
+  @@index([backer_id], map: "idx_benefits_backer")
+  @@index([contribution_id], map: "idx_benefits_contribution")
+  @@index([benefit_type], map: "idx_benefits_type")
+  @@schema("crowdfunding")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+/// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
+model backers {
+  id                        String                      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email                     String                      @unique @db.Citext
+  first_name                String                      @db.VarChar(100)
+  last_initial              String                      @db.VarChar(1)
+  phone                     String?                     @db.VarChar(30)
+  city                      String?                     @db.VarChar(100)
+  state                     String?                     @db.VarChar(2)
+  stripe_customer_id        String?                     @unique
+  total_contributed         Decimal?                    @default(0) @db.Decimal(10, 2)
+  contribution_count        Int?                        @default(0)
+  created_at                DateTime?                   @default(now()) @db.Timestamptz(6)
+  updated_at                DateTime?                   @default(now()) @db.Timestamptz(6)
+  user_id                   String?                     @unique(map: "unique_user_id") @db.Uuid
+  badge_level               badge_tier?
+  badge_earned_at           DateTime?                   @db.Timestamptz(6)
+  players                   players[]
+  backer_benefits           backer_benefits[]
+  benefit_allocations       benefit_allocations[]
+  benefit_event_access      benefit_event_access[]
+  benefit_merchandise_items benefit_merchandise_items[]
+  benefit_usage_log         benefit_usage_log[]
+  contributions             contributions[]
+  court_sponsors            court_sponsors[]
+  founders_wall             founders_wall?
+  recognition_items         recognition_items[]
+
+  @@index([badge_level], map: "idx_backers_badge_level")
+  @@index([email], map: "idx_backers_email")
+  @@index([stripe_customer_id], map: "idx_backers_stripe_customer")
+  @@index([user_id], map: "idx_backers_user_id")
+  @@schema("crowdfunding")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model benefit_allocations {
+  id                        String                      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  backer_id                 String                      @db.Uuid
+  contribution_id           String                      @db.Uuid
+  tier_id                   String                      @db.Uuid
+  benefit_type              String                      @db.VarChar(100)
+  benefit_name              String
+  total_allocated           Int?
+  total_used                Int?                        @default(0)
+  remaining                 Int?
+  valid_from                DateTime?                   @default(dbgenerated("CURRENT_DATE")) @db.Date
+  valid_until               DateTime?                   @db.Date
+  is_active                 Boolean?                    @default(true)
+  metadata                  Json?                       @default("{}")
+  created_at                DateTime?                   @default(now()) @db.Timestamptz(6)
+  updated_at                DateTime?                   @default(now()) @db.Timestamptz(6)
+  fulfillment_status        String?                     @default("allocated") @db.VarChar(50)
+  fulfilled_by              String?                     @db.Uuid
+  fulfilled_at              DateTime?                   @db.Timestamptz(6)
+  fulfillment_notes         String?
+  quantity_allocated        Decimal?                    @db.Decimal(10, 2)
+  quantity_used             Decimal?                    @default(0) @db.Decimal(10, 2)
+  quantity_remaining        Decimal?                    @db.Decimal(10, 2)
+  benefit_description       String?
+  backers                   backers                     @relation(fields: [backer_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  contributions             contributions               @relation(fields: [contribution_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  contribution_tiers        contribution_tiers          @relation(fields: [tier_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  benefit_event_access      benefit_event_access[]
+  benefit_merchandise_items benefit_merchandise_items[]
+  benefit_usage_log         benefit_usage_log[]
+  recognition_items         recognition_items[]
+
+  @@index([backer_id], map: "idx_benefit_allocations_backer")
+  @@index([contribution_id], map: "idx_benefit_allocations_contribution")
+  @@index([fulfillment_status], map: "idx_benefit_allocations_fulfillment_status")
+  @@index([benefit_type], map: "idx_benefit_allocations_type")
+  @@schema("crowdfunding")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model benefit_event_access {
+  id                  String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  allocation_id       String              @db.Uuid
+  backer_id           String              @db.Uuid
+  event_type          String              @db.VarChar(100)
+  event_name          String
+  event_description   String?
+  event_date          DateTime?           @db.Date
+  event_time          DateTime?           @db.Time(6)
+  event_location      String?             @default("Dink House") @db.VarChar(255)
+  guest_count_allowed Int?                @default(0)
+  guest_names         String[]
+  rsvp_status         String?             @default("pending") @db.VarChar(50)
+  rsvp_date           DateTime?           @db.Timestamptz(6)
+  rsvp_notes          String?
+  reminder_sent       Boolean?            @default(false)
+  reminder_sent_at    DateTime?           @db.Timestamptz(6)
+  attendance_status   String?             @default("not_attended") @db.VarChar(50)
+  check_in_time       DateTime?           @db.Timestamptz(6)
+  staff_id            String?             @db.Uuid
+  attendance_notes    String?
+  metadata            Json?               @default("{}")
+  created_at          DateTime?           @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime?           @default(now()) @db.Timestamptz(6)
+  benefit_allocations benefit_allocations @relation(fields: [allocation_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  backers             backers             @relation(fields: [backer_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([allocation_id], map: "idx_event_allocation")
+  @@index([attendance_status], map: "idx_event_attendance")
+  @@index([backer_id], map: "idx_event_backer")
+  @@index([event_date], map: "idx_event_date")
+  @@index([rsvp_status], map: "idx_event_rsvp_status")
+  @@index([event_type], map: "idx_event_type")
+  @@schema("crowdfunding")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model benefit_merchandise_items {
+  id                    String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  allocation_id         String              @db.Uuid
+  backer_id             String              @db.Uuid
+  item_type             String              @db.VarChar(50)
+  item_description      String?
+  quantity              Int?                @default(1)
+  size                  String?             @db.VarChar(10)
+  color                 String?             @db.VarChar(50)
+  customization_notes   String?
+  pickup_status         String?             @default("pending") @db.VarChar(50)
+  ready_for_pickup_date DateTime?           @db.Date
+  pickup_location       String?             @default("Dink House Front Desk") @db.VarChar(255)
+  notification_sent     Boolean?            @default(false)
+  notification_sent_at  DateTime?           @db.Timestamptz(6)
+  picked_up_at          DateTime?           @db.Timestamptz(6)
+  picked_up_by_name     String?             @db.VarChar(255)
+  staff_id              String?             @db.Uuid
+  pickup_notes          String?
+  metadata              Json?               @default("{}")
+  created_at            DateTime?           @default(now()) @db.Timestamptz(6)
+  updated_at            DateTime?           @default(now()) @db.Timestamptz(6)
+  benefit_allocations   benefit_allocations @relation(fields: [allocation_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  backers               backers             @relation(fields: [backer_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([allocation_id], map: "idx_merchandise_allocation")
+  @@index([backer_id], map: "idx_merchandise_backer")
+  @@index([pickup_status], map: "idx_merchandise_status")
+  @@index([item_type], map: "idx_merchandise_type")
+  @@schema("crowdfunding")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model benefit_usage_log {
+  id                  String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  allocation_id       String              @db.Uuid
+  backer_id           String              @db.Uuid
+  quantity_used       Int?                @default(1)
+  usage_date          DateTime?           @default(dbgenerated("CURRENT_DATE")) @db.Date
+  usage_time          DateTime?           @default(now()) @db.Timestamptz(6)
+  used_for            String?
+  staff_verified      Boolean?            @default(false)
+  staff_id            String?             @db.Uuid
+  notes               String?
+  metadata            Json?               @default("{}")
+  created_at          DateTime?           @default(now()) @db.Timestamptz(6)
+  benefit_allocations benefit_allocations @relation(fields: [allocation_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  backers             backers             @relation(fields: [backer_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([allocation_id], map: "idx_benefit_usage_log_allocation")
+  @@index([backer_id], map: "idx_benefit_usage_log_backer")
+  @@index([usage_date], map: "idx_benefit_usage_log_date")
+  @@schema("crowdfunding")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model campaign_types {
+  id                 String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name               String               @db.VarChar(255)
+  slug               String               @unique @db.VarChar(255)
+  description        String?
+  goal_amount        Decimal              @db.Decimal(10, 2)
+  current_amount     Decimal?             @default(0) @db.Decimal(10, 2)
+  backer_count       Int?                 @default(0)
+  display_order      Int?                 @default(0)
+  is_active          Boolean?             @default(true)
+  metadata           Json?                @default("{}")
+  created_at         DateTime?            @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime?            @default(now()) @db.Timestamptz(6)
+  contribution_tiers contribution_tiers[]
+  contributions      contributions[]
+
+  @@index([is_active], map: "idx_campaign_types_active")
+  @@index([display_order], map: "idx_campaign_types_display_order")
+  @@index([slug], map: "idx_campaign_types_slug")
+  @@schema("crowdfunding")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model contribution_tiers {
+  id                  String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  campaign_type_id    String                @db.Uuid
+  name                String                @db.VarChar(255)
+  amount              Decimal               @db.Decimal(10, 2)
+  description         String?
+  benefits            Json?                 @default("[]")
+  stripe_price_id     String?               @unique
+  max_backers         Int?
+  current_backers     Int?                  @default(0)
+  display_order       Int?                  @default(0)
+  is_active           Boolean?              @default(true)
+  metadata            Json?                 @default("{}")
+  created_at          DateTime?             @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime?             @default(now()) @db.Timestamptz(6)
+  benefits_backup     Json?
+  badge_tier          badge_tier?
+  benefit_allocations benefit_allocations[]
+  campaign_types      campaign_types        @relation(fields: [campaign_type_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  contributions       contributions[]
+
+  @@index([is_active], map: "idx_tiers_active")
+  @@index([badge_tier], map: "idx_tiers_badge")
+  @@index([campaign_type_id], map: "idx_tiers_campaign")
+  @@index([stripe_price_id], map: "idx_tiers_price_id")
+  @@schema("crowdfunding")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model contributions {
+  id                         String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  backer_id                  String                @db.Uuid
+  campaign_type_id           String                @db.Uuid
+  tier_id                    String?               @db.Uuid
+  amount                     Decimal               @db.Decimal(10, 2)
+  stripe_payment_intent_id   String?               @unique
+  stripe_charge_id           String?
+  stripe_checkout_session_id String?               @unique
+  status                     String                @default("pending") @db.VarChar(50)
+  payment_method             String?               @db.VarChar(50)
+  is_public                  Boolean?              @default(true)
+  show_amount                Boolean?              @default(true)
+  custom_message             String?
+  metadata                   Json?                 @default("{}")
+  created_at                 DateTime?             @default(now()) @db.Timestamptz(6)
+  completed_at               DateTime?             @db.Timestamptz(6)
+  refunded_at                DateTime?             @db.Timestamptz(6)
+  backer_benefits            backer_benefits[]
+  benefit_allocations        benefit_allocations[]
+  backers                    backers               @relation(fields: [backer_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  campaign_types             campaign_types        @relation(fields: [campaign_type_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  contribution_tiers         contribution_tiers?   @relation(fields: [tier_id], references: [id], onUpdate: NoAction)
+  court_sponsors             court_sponsors[]
+
+  @@index([backer_id], map: "idx_contributions_backer")
+  @@index([campaign_type_id], map: "idx_contributions_campaign")
+  @@index([completed_at], map: "idx_contributions_completed_at")
+  @@index([status], map: "idx_contributions_status")
+  @@index([stripe_payment_intent_id], map: "idx_contributions_stripe_payment_intent")
+  @@index([stripe_checkout_session_id], map: "idx_contributions_stripe_session")
+  @@index([tier_id], map: "idx_contributions_tier")
+  @@schema("crowdfunding")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model court_sponsors {
+  id                String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  backer_id         String        @db.Uuid
+  contribution_id   String        @db.Uuid
+  sponsor_name      String        @db.VarChar(255)
+  sponsor_type      String?       @default("individual") @db.VarChar(50)
+  logo_url          String?
+  court_number      Int?
+  sponsorship_start DateTime      @default(dbgenerated("CURRENT_DATE")) @db.Date
+  sponsorship_end   DateTime?     @db.Date
+  is_active         Boolean?      @default(true)
+  display_order     Int?
+  metadata          Json?         @default("{}")
+  created_at        DateTime?     @default(now()) @db.Timestamptz(6)
+  backers           backers       @relation(fields: [backer_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  contributions     contributions @relation(fields: [contribution_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([is_active], map: "idx_sponsors_active")
+  @@index([backer_id], map: "idx_sponsors_backer")
+  @@schema("crowdfunding")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model founders_wall {
+  id                String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  backer_id         String      @unique @db.Uuid
+  display_name      String      @db.VarChar(255)
+  location          String?     @db.VarChar(255)
+  contribution_tier String?     @db.VarChar(255)
+  total_contributed Decimal     @default(0) @db.Decimal(10, 2)
+  is_featured       Boolean?    @default(false)
+  display_order     Int?
+  created_at        DateTime?   @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime?   @default(now()) @db.Timestamptz(6)
+  badge_tier        badge_tier?
+  metadata          Json?       @default("{}")
+  backers           backers     @relation(fields: [backer_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([badge_tier], map: "idx_founders_wall_badge")
+  @@index([display_order], map: "idx_founders_wall_display_order")
+  @@index([is_featured], map: "idx_founders_wall_featured")
+  @@schema("crowdfunding")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model recognition_items {
+  id                          String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  allocation_id               String              @db.Uuid
+  backer_id                   String              @db.Uuid
+  item_type                   String              @db.VarChar(50)
+  item_description            String
+  display_text                String              @db.VarChar(500)
+  custom_message              String?
+  status                      String?             @default("pending") @db.VarChar(50)
+  order_date                  DateTime?           @db.Date
+  ordered_by                  String?             @db.Uuid
+  vendor                      String?             @db.VarChar(255)
+  order_number                String?             @db.VarChar(100)
+  production_started          DateTime?           @db.Date
+  expected_completion         DateTime?           @db.Date
+  actual_completion           DateTime?           @db.Date
+  installation_date           DateTime?           @db.Date
+  installed_by                String?             @db.Uuid
+  installation_location       String?
+  installation_photo_url      String?
+  verified_by                 String?             @db.Uuid
+  verified_at                 DateTime?           @db.Timestamptz(6)
+  estimated_cost              Decimal?            @db.Decimal(10, 2)
+  actual_cost                 Decimal?            @db.Decimal(10, 2)
+  notes                       String?
+  metadata                    Json?               @default("{}")
+  created_at                  DateTime?           @default(now()) @db.Timestamptz(6)
+  updated_at                  DateTime?           @default(now()) @db.Timestamptz(6)
+  sponsorship_type            String?             @db.VarChar(50)
+  sponsorship_duration_months Int?
+  sponsorship_start_date      DateTime?           @db.Date
+  sponsorship_end_date        DateTime?           @db.Date
+  court_number                Int?
+  renewal_reminder_sent       Boolean?            @default(false)
+  auto_renew                  Boolean?            @default(false)
+  benefit_allocations         benefit_allocations @relation(fields: [allocation_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  backers                     backers             @relation(fields: [backer_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([sponsorship_end_date], map: "idx_recognition_end_date")
+  @@index([allocation_id], map: "idx_recognition_items_allocation")
+  @@index([backer_id], map: "idx_recognition_items_backer")
+  @@index([item_type], map: "idx_recognition_items_item_type")
+  @@index([status], map: "idx_recognition_items_status")
+  @@index([sponsorship_type], map: "idx_recognition_sponsorship_type")
+  @@schema("crowdfunding")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model courts {
+  id           String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  court_number Int               @unique
+  name         String            @db.VarChar(100)
+  surface_type court_surface?    @default(hard)
+  environment  court_environment @default(indoor)
+  status       court_status?     @default(available)
+  location     String?           @db.VarChar(100)
+  features     Json?             @default("[]")
+  max_capacity Int?              @default(4)
+  notes        String?
+  created_at   DateTime?         @default(now()) @db.Timestamptz(6)
+  updated_at   DateTime?         @default(now()) @db.Timestamptz(6)
+
+  @@index([environment], map: "idx_courts_environment")
+  @@index([court_number], map: "idx_courts_number")
+  @@index([status], map: "idx_courts_status")
+  @@schema("events")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model dupr_brackets {
+  id              String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  label           String            @unique @db.VarChar(100)
+  min_rating      Decimal?          @db.Decimal(3, 2)
+  min_inclusive   Boolean?          @default(true)
+  max_rating      Decimal?          @db.Decimal(3, 2)
+  max_inclusive   Boolean?          @default(true)
+  created_at      DateTime?         @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime?         @default(now()) @db.Timestamptz(6)
+  event_templates event_templates[]
+  events          events[]
+
+  @@index([max_rating], map: "idx_dupr_brackets_max_rating")
+  @@index([min_rating], map: "idx_dupr_brackets_min_rating")
+  @@schema("events")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model event_templates {
+  id                 String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name               String               @db.VarChar(200)
+  description        String?
+  event_type         event_type
+  duration_minutes   Int                  @default(120)
+  max_capacity       Int?                 @default(16)
+  min_capacity       Int?                 @default(4)
+  skill_levels       events_skill_level[] @default([level_2_0, level_2_5, level_3_0, level_3_5, level_4_0, level_4_5, level_5_0])
+  price_member       Decimal?             @default(0) @db.Decimal(10, 2)
+  price_guest        Decimal?             @default(0) @db.Decimal(10, 2)
+  court_preferences  Json?                @default("{\"count\": 2}")
+  dupr_bracket_id    String?              @db.Uuid
+  dupr_range_label   String?              @db.VarChar(100)
+  dupr_min_rating    Decimal?             @db.Decimal(3, 2)
+  dupr_max_rating    Decimal?             @db.Decimal(3, 2)
+  dupr_open_ended    Boolean?             @default(false)
+  dupr_min_inclusive Boolean?             @default(true)
+  dupr_max_inclusive Boolean?             @default(true)
+  equipment_provided Boolean?             @default(false)
+  settings           Json?                @default("{}")
+  is_active          Boolean?             @default(true)
+  created_by         String?              @db.Uuid
+  created_at         DateTime?            @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime?            @default(now()) @db.Timestamptz(6)
+  admin_users        admin_users?         @relation(fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  dupr_brackets      dupr_brackets?       @relation(fields: [dupr_bracket_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  events             events[]
+
+  @@index([is_active], map: "idx_event_templates_active")
+  @@index([dupr_bracket_id], map: "idx_event_templates_dupr_bracket")
+  @@index([event_type], map: "idx_event_templates_type")
+  @@schema("events")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model events {
+  id                                         String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title                                      String               @db.VarChar(200)
+  description                                String?
+  event_type                                 event_type
+  template_id                                String?              @db.Uuid
+  start_time                                 DateTime             @db.Timestamptz(6)
+  end_time                                   DateTime             @db.Timestamptz(6)
+  check_in_time                              DateTime?            @db.Timestamptz(6)
+  max_capacity                               Int?                 @default(16)
+  min_capacity                               Int?                 @default(4)
+  current_registrations                      Int?                 @default(0)
+  waitlist_capacity                          Int?                 @default(5)
+  skill_levels                               events_skill_level[] @default([level_2_0, level_2_5, level_3_0, level_3_5, level_4_0, level_4_5, level_5_0])
+  dupr_bracket_id                            String?              @db.Uuid
+  dupr_range_label                           String?              @db.VarChar(100)
+  dupr_min_rating                            Decimal?             @db.Decimal(3, 2)
+  dupr_max_rating                            Decimal?             @db.Decimal(3, 2)
+  dupr_open_ended                            Boolean?             @default(false)
+  dupr_min_inclusive                         Boolean?             @default(true)
+  dupr_max_inclusive                         Boolean?             @default(true)
+  member_only                                Boolean?             @default(false)
+  price_member                               Decimal?             @default(0) @db.Decimal(10, 2)
+  price_guest                                Decimal?             @default(0) @db.Decimal(10, 2)
+  is_published                               Boolean?             @default(true)
+  is_cancelled                               Boolean?             @default(false)
+  cancellation_reason                        String?
+  equipment_provided                         Boolean?             @default(false)
+  special_instructions                       String?
+  settings                                   Json?                @default("{}")
+  created_by                                 String?              @db.Uuid
+  updated_by                                 String?              @db.Uuid
+  created_at                                 DateTime?            @default(now()) @db.Timestamptz(6)
+  updated_at                                 DateTime?            @default(now()) @db.Timestamptz(6)
+  is_recurring                               Boolean?             @default(false)
+  recurrence_pattern                         Json?
+  session_type                               String?              @db.VarChar(50)
+  special_event_name                         String?              @db.VarChar(200)
+  dedicated_skill_label                      String?              @db.VarChar(100)
+  court_allocations                          Json?                @default("[]")
+  player_registrations                       Json?                @default("[]")
+  max_players_per_court                      Int?                 @default(8)
+  check_in_instructions                      String?
+  effective_from                             DateTime?            @db.Date
+  effective_until                            DateTime?            @db.Date
+  admin_users_events_created_byToadmin_users admin_users?         @relation("events_created_byToadmin_users", fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  dupr_brackets                              dupr_brackets?       @relation(fields: [dupr_bracket_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  event_templates                            event_templates?     @relation(fields: [template_id], references: [id], onUpdate: NoAction)
+  admin_users_events_updated_byToadmin_users admin_users?         @relation("events_updated_byToadmin_users", fields: [updated_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([is_cancelled], map: "idx_events_cancelled")
+  @@index([court_allocations], map: "idx_events_court_allocations", type: Gin)
+  @@index([court_allocations], map: "idx_events_court_allocations_court_id", type: Gin)
+  @@index([start_time, end_time], map: "idx_events_date_range")
+  @@index([dupr_bracket_id], map: "idx_events_dupr_bracket")
+  @@index([end_time], map: "idx_events_end_time")
+  @@index([is_recurring], map: "idx_events_is_recurring")
+  @@index([player_registrations], map: "idx_events_player_registrations", type: Gin)
+  @@index([player_registrations], map: "idx_events_player_registrations_user_id", type: Gin)
+  @@index([is_published], map: "idx_events_published")
+  @@index([recurrence_pattern], map: "idx_events_recurrence_pattern", type: Gin)
+  @@index([session_type], map: "idx_events_session_type")
+  @@index([start_time], map: "idx_events_start_time")
+  @@index([event_type], map: "idx_events_type")
+  @@schema("events")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model open_play_instances {
+  id                           String                        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  schedule_block_id            String                        @db.Uuid
+  instance_date                DateTime                      @db.Date
+  start_time                   DateTime                      @db.Timestamptz(6)
+  end_time                     DateTime                      @db.Timestamptz(6)
+  override_id                  String?                       @db.Uuid
+  is_cancelled                 Boolean?                      @default(false)
+  generated_at                 DateTime?                     @default(now()) @db.Timestamptz(6)
+  open_play_schedule_overrides open_play_schedule_overrides? @relation(fields: [override_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([schedule_block_id, instance_date], map: "unique_block_instance_date")
+  @@index([schedule_block_id], map: "idx_instances_block")
+  @@index([is_cancelled], map: "idx_instances_cancelled")
+  @@index([instance_date], map: "idx_instances_date")
+  @@index([start_time, end_time], map: "idx_instances_time_range")
+  @@schema("events")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model open_play_schedule_overrides {
+  id                       String                  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  schedule_block_id        String?                 @db.Uuid
+  override_date            DateTime                @db.Date
+  is_cancelled             Boolean?                @default(false)
+  replacement_name         String?                 @db.VarChar(200)
+  replacement_start_time   DateTime?               @db.Time(6)
+  replacement_end_time     DateTime?               @db.Time(6)
+  replacement_session_type open_play_session_type?
+  reason                   String
+  special_instructions     String?
+  created_by               String?                 @db.Uuid
+  created_at               DateTime?               @default(now()) @db.Timestamptz(6)
+  updated_at               DateTime?               @default(now()) @db.Timestamptz(6)
+  open_play_instances      open_play_instances[]
+  admin_users              admin_users?            @relation(fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([schedule_block_id, override_date], map: "unique_block_override_date")
+  @@index([schedule_block_id], map: "idx_overrides_block")
+  @@index([is_cancelled], map: "idx_overrides_cancelled")
+  @@index([override_date], map: "idx_overrides_date")
+  @@schema("events")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model launch_campaigns {
+  id                 String               @id @default(dbgenerated("extensions.uuid_generate_v4()")) @db.Uuid
+  name               String               @db.VarChar(255)
+  description        String?
+  launch_date        DateTime?            @db.Date
+  status             String?              @default("planning") @db.VarChar(50)
+  target_signups     Int?
+  current_signups    Int?                 @default(0)
+  metadata           Json?                @default("{}")
+  created_at         DateTime?            @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime?            @default(now()) @db.Timestamptz(6)
+  launch_subscribers launch_subscribers[]
+
+  @@schema("launch")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model launch_subscribers {
+  id                     String                   @id @default(dbgenerated("extensions.uuid_generate_v4()")) @db.Uuid
+  email                  String                   @unique @db.VarChar(255)
+  first_name             String?                  @db.VarChar(100)
+  last_name              String?                  @db.VarChar(100)
+  campaign_id            String?                  @db.Uuid
+  source                 String?                  @db.VarChar(100)
+  status                 String?                  @default("active") @db.VarChar(20)
+  metadata               Json?                    @default("{}")
+  subscribed_at          DateTime?                @default(now()) @db.Timestamptz(6)
+  unsubscribed_at        DateTime?                @db.Timestamptz(6)
+  created_at             DateTime?                @default(now()) @db.Timestamptz(6)
+  unsubscribe_token      String?                  @unique @db.VarChar(255)
+  verified_at            DateTime?                @db.Timestamptz(6)
+  is_active              Boolean?                 @default(true)
+  subscription_date      DateTime?                @default(now()) @db.Timestamptz(6)
+  updated_at             DateTime?                @default(now()) @db.Timestamptz(6)
+  launch_campaigns       launch_campaigns?        @relation(fields: [campaign_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  newsletter_email_queue newsletter_email_queue[]
+
+  @@schema("launch")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model newsletter_email_queue {
+  id                 String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  subscriber_id      String?             @db.Uuid
+  email              String              @db.VarChar(255)
+  first_name         String?             @db.VarChar(100)
+  status             String?             @default("pending") @db.VarChar(50)
+  error_message      String?
+  created_at         DateTime?           @default(now()) @db.Timestamptz(6)
+  sent_at            DateTime?           @db.Timestamptz(6)
+  launch_subscribers launch_subscribers? @relation(fields: [subscriber_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([created_at], map: "newsletter_email_queue_created_at")
+  @@index([status], map: "newsletter_email_queue_status")
+  @@schema("launch")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model notification_templates {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name          String    @db.VarChar(255)
+  slug          String    @unique @db.VarChar(255)
+  template_type String    @db.VarChar(50)
+  category      String    @db.VarChar(100)
+  subject       String?   @db.VarChar(255)
+  html_content  String?
+  text_content  String?
+  variables     Json?     @default("{}")
+  is_active     Boolean?  @default(true)
+  created_by    String?   @db.Uuid
+  created_at    DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime? @default(now()) @db.Timestamptz(6)
+
+  @@schema("launch")
+}
+
+model migrations {
+  id          Int       @id @default(dbgenerated("nextval('_migrations_id_seq'::regclass)"))
+  name        String    @unique @db.VarChar(255)
+  executed_at DateTime? @default(now()) @db.Timestamp(6)
+
+  @@map("_migrations")
+  @@schema("public")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model allowed_emails {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email      String    @unique @db.Citext
+  first_name String?   @db.VarChar(100)
+  last_name  String?   @db.VarChar(100)
+  role       String?   @default("viewer") @db.VarChar(50)
+  added_by   String?   @db.Uuid
+  notes      String?
+  is_active  Boolean?  @default(true)
+  used_at    DateTime? @db.Timestamptz(6)
+  used_by    String?   @db.Uuid
+  created_at DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at DateTime? @default(now()) @db.Timestamptz(6)
+
+  @@index([created_at(sort: Desc)], map: "idx_allowed_emails_created_at")
+  @@index([email], map: "idx_allowed_emails_email")
+  @@index([is_active], map: "idx_allowed_emails_is_active")
+  @@schema("public")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model employee_profiles {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  employee_id       String    @unique @db.Uuid
+  bio               String?
+  title             String?   @db.VarChar(100)
+  specialties       String[]
+  certifications    Json?     @default("[]")
+  availability      Json?     @default("{}")
+  profile_image_url String?
+  social_links      Json?     @default("{}")
+  preferences       Json?     @default("{}")
+  created_at        DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime? @default(now()) @db.Timestamptz(6)
+  employees         employees @relation(fields: [employee_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([employee_id], map: "idx_employee_profiles_employee_id")
+  @@schema("public")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model employees {
+  id                String             @id @default(dbgenerated("extensions.uuid_generate_v4()")) @db.Uuid
+  auth_id           String?            @db.Uuid
+  email             String             @unique @db.VarChar(255)
+  first_name        String?            @db.VarChar(100)
+  last_name         String?            @db.VarChar(100)
+  role              String             @default("employee") @db.VarChar(50)
+  department        String?            @db.VarChar(100)
+  phone             String?            @db.VarChar(20)
+  avatar_url        String?
+  is_active         Boolean?           @default(true)
+  created_at        DateTime?          @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime?          @default(now()) @db.Timestamptz(6)
+  employee_profiles employee_profiles?
+
+  @@index([auth_id], map: "idx_employees_auth_id")
+  @@index([email], map: "idx_employees_email")
+  @@schema("public")
+}
+
+/// The underlying table does not contain a valid unique identifier and can therefore currently not be handled by Prisma Client.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model v_site_url {
+  config_value String?
+
+  @@ignore
+  @@schema("public")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model activity_logs {
+  id          String    @id @default(dbgenerated("extensions.uuid_generate_v4()")) @db.Uuid
+  user_id     String?   @db.Uuid
+  action      String    @db.VarChar(100)
+  entity_type String?   @db.VarChar(100)
+  entity_id   String?   @db.Uuid
+  details     Json?     @default("{}")
+  ip_address  String?   @db.Inet
+  user_agent  String?
+  created_at  DateTime? @default(now()) @db.Timestamptz(6)
+
+  @@schema("system")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model edge_function_config {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  config_key   String    @unique @db.VarChar(100)
+  config_value String
+  description  String?
+  is_sensitive Boolean?  @default(false)
+  created_at   DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at   DateTime? @default(now()) @db.Timestamptz(6)
+
+  @@schema("system")
+}
+
+model email_attachments {
+  id           String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email_log_id String?     @db.Uuid
+  filename     String      @db.VarChar(255)
+  content_type String?     @db.VarChar(100)
+  size_bytes   Int?
+  storage_path String?
+  created_at   DateTime?   @default(now()) @db.Timestamptz(6)
+  email_logs   email_logs? @relation(fields: [email_log_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@schema("system")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model email_logs {
+  id                  String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  template_key        String?             @db.VarChar(100)
+  to_email            String
+  from_email          String
+  subject             String?             @db.VarChar(255)
+  status              String?             @default("pending") @db.VarChar(50)
+  provider            String?             @default("sendgrid") @db.VarChar(50)
+  provider_message_id String?             @db.VarChar(255)
+  metadata            Json?               @default("{}")
+  error_message       String?
+  sent_at             DateTime?           @db.Timestamptz(6)
+  opened_at           DateTime?           @db.Timestamptz(6)
+  clicked_at          DateTime?           @db.Timestamptz(6)
+  created_at          DateTime?           @default(now()) @db.Timestamptz(6)
+  email_attachments   email_attachments[]
+
+  @@index([created_at], map: "email_logs_created_at")
+  @@index([status], map: "email_logs_status")
+  @@index([template_key], map: "email_logs_template_key")
+  @@index([to_email], map: "email_logs_to_email")
+  @@index([created_at(sort: Desc)], map: "idx_email_logs_created")
+  @@index([created_at], map: "idx_email_logs_created_at")
+  @@index([provider_message_id], map: "idx_email_logs_provider_id")
+  @@index([status], map: "idx_email_logs_status")
+  @@index([to_email], map: "idx_email_logs_to")
+  @@index([to_email], map: "idx_email_logs_to_email")
+  @@schema("system")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model email_templates {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  template_key String    @unique @db.VarChar(100)
+  name         String    @db.VarChar(255)
+  description  String?
+  subject      String    @db.VarChar(255)
+  html_body    String
+  text_body    String?
+  variables    Json?     @default("[]")
+  category     String?   @default("general") @db.VarChar(50)
+  is_active    Boolean?  @default(true)
+  created_at   DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at   DateTime? @default(now()) @db.Timestamptz(6)
+
+  @@schema("system")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model membership_tiers {
+  id                            String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tier_code                     membership_level @unique
+  tier_name                     String           @db.VarChar(50)
+  monthly_price                 Decimal          @default(0) @db.Decimal(10, 2)
+  description                   String?
+  open_play_access              String?
+  open_play_peak_price          Decimal?         @default(0) @db.Decimal(10, 2)
+  open_play_offpeak_price       Decimal?         @default(0) @db.Decimal(10, 2)
+  court_rental_discount_percent Int?             @default(0)
+  court_rental_peak_price       Decimal?         @db.Decimal(10, 2)
+  court_rental_offpeak_price    Decimal?         @db.Decimal(10, 2)
+  free_court_rental_hours       String?
+  equipment_rental_price        Decimal?         @default(0) @db.Decimal(10, 2)
+  booking_window_days           Int?             @default(3)
+  cancellation_hours            Int?             @default(24)
+  guest_passes_per_month        Int?             @default(0)
+  benefits                      Json?            @default("[]")
+  features                      Json?            @default("[]")
+  is_active                     Boolean?         @default(true)
+  sort_order                    Int?             @default(0)
+  created_at                    DateTime?        @default(now()) @db.Timestamptz(6)
+  updated_at                    DateTime?        @default(now()) @db.Timestamptz(6)
+
+  @@index([is_active], map: "idx_membership_tiers_active")
+  @@index([tier_code], map: "idx_membership_tiers_code")
+  @@schema("system")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model system_settings {
+  id          String    @id @default(dbgenerated("extensions.uuid_generate_v4()")) @db.Uuid
+  key         String    @unique @db.VarChar(255)
+  value       Json?
+  description String?
+  category    String?   @db.VarChar(100)
+  is_public   Boolean?  @default(false)
+  is_editable Boolean?  @default(true)
+  created_at  DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime? @default(now()) @db.Timestamptz(6)
+
+  @@schema("system")
+}
+
+model uploaded_assets {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  bucket_id    String    @db.VarChar(255)
+  object_path  String
+  filename     String    @db.VarChar(255)
+  content_type String?   @db.VarChar(100)
+  size_bytes   BigInt?
+  public_url   String?
+  metadata     Json?     @default("{}")
+  uploaded_by  String?   @db.Uuid
+  created_at   DateTime? @default(now()) @db.Timestamptz(6)
+
+  @@unique([bucket_id, object_path])
+  @@schema("system")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model webhook_queue {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  webhook_type  String    @db.VarChar(100)
+  payload       Json
+  status        String?   @default("pending") @db.VarChar(50)
+  attempts      Int?      @default(0)
+  max_attempts  Int?      @default(3)
+  error_message String?
+  created_at    DateTime? @default(now()) @db.Timestamptz(6)
+  processed_at  DateTime? @db.Timestamptz(6)
+
+  @@index([created_at], map: "webhook_queue_created_at")
+  @@index([status], map: "webhook_queue_status")
+  @@index([webhook_type], map: "webhook_queue_type")
+  @@schema("system")
+}
+
+enum admin_role {
+  super_admin
+  admin
+  manager
+  coach
+  editor
+  viewer
+
+  @@schema("app_auth")
+}
+
+enum gender {
+  male
+  female
+
+  @@schema("app_auth")
+}
+
+enum membership_level {
+  guest
+  basic
+  premium
+  vip
+
+  @@schema("app_auth")
+}
+
+enum app_auth_skill_level {
+  beginner
+  novice
+  intermediate
+  advanced
+  expert
+
+  @@map("skill_level")
+  @@schema("app_auth")
+}
+
+enum user_type {
+  admin
+  player
+  guest
+
+  @@schema("app_auth")
+}
+
+/// This enum is commented in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+enum badge_tier {
+  bronze
+  silver
+  gold
+  platinum
+  founding_pillar
+
+  @@schema("crowdfunding")
+}
+
+enum court_environment {
+  indoor
+  outdoor
+
+  @@schema("events")
+}
+
+enum court_status {
+  available
+  maintenance
+  reserved
+  closed
+
+  @@schema("events")
+}
+
+enum court_surface {
+  hard
+  clay
+  grass
+  indoor
+
+  @@schema("events")
+}
+
+enum event_type {
+  event_scramble
+  dupr_open_play
+  dupr_tournament
+  non_dupr_tournament
+  league
+  clinic
+  private_booking
+
+  @@schema("events")
+}
+
+/// This enum is commented in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+enum open_play_session_type {
+  divided_by_skill
+  mixed_levels
+  dedicated_skill
+  special_event
+
+  @@schema("events")
+}
+
+enum registration_status {
+  registered
+  waitlisted
+  cancelled
+  no_show
+
+  @@schema("events")
+}
+
+enum events_skill_level {
+  level_2_0  @map("2.0")
+  level_2_5  @map("2.5")
+  level_3_0  @map("3.0")
+  level_3_5  @map("3.5")
+  level_4_0  @map("4.0")
+  level_4_5  @map("4.5")
+  level_5_0  @map("5.0")
+  level_5_0_plus @map("5.0+")
+  @@map("skill_level")
+  @@schema("events")
+}

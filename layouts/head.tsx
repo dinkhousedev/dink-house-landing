@@ -2,6 +2,7 @@ import React from "react";
 import NextHead from "next/head";
 
 import { siteConfig } from "@/config/site";
+import { CLOUDFRONT_URL } from "@/config/media-urls";
 
 export const Head = () => {
   return (
@@ -20,6 +21,8 @@ export const Head = () => {
         name="viewport"
       />
       <link href="/favicon.ico" rel="icon" />
+      <link href={CLOUDFRONT_URL} rel="preconnect" />
+      <link href={CLOUDFRONT_URL} rel="dns-prefetch" />
     </NextHead>
   );
 };

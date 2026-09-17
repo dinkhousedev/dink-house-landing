@@ -1,14 +1,8 @@
-"use client";
-
 import React, { useEffect, useState } from "react";
-
 import { useRouter } from "next/router";
 
 import DefaultLayout from "@/layouts/default";
-
-const API_URL =
-  process.env.NEXT_PUBLIC_SUPABASE_URL || "https://wchxzbuuwssrnaxshseu.supabase.co";
-const ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
+import { logger } from "../lib/logger";
 
 export default function ConfirmSubscription() {
   const router = useRouter();
@@ -25,19 +19,11 @@ export default function ConfirmSubscription() {
 
     const confirmSubscription = async () => {
       try {
-        const response = await fetch(
-          `${API_URL}/rest/v1/rpc/confirm_newsletter_subscription`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              apikey: ANON_KEY,
-            },
-            body: JSON.stringify({
-              p_verification_token: token,
-            }),
-          },
-        );
+        const response = await fetch("/api/newsletter/confirm", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token }),
+        });
 
         const result = await response.json();
 
@@ -56,7 +42,7 @@ export default function ConfirmSubscription() {
           );
         }
       } catch (error) {
-        console.error("Confirmation error:", error);
+        logger.error("Confirmation error:", error);
         setStatus("error");
         setMessage(
           "Something went wrong. Please try again or contact support.",
@@ -100,7 +86,9 @@ export default function ConfirmSubscription() {
                   What&apos;s Next?
                 </h2>
                 <ul className="space-y-2 text-gray-300">
-                  <li>✅ You&apos;ll receive exclusive pickleball tips & content</li>
+                  <li>
+                    ✅ You&apos;ll receive exclusive pickleball tips & content
+                  </li>
                   <li>
                     🎯 Get early access to court bookings when we open in 2026
                   </li>
@@ -141,13 +129,11 @@ export default function ConfirmSubscription() {
                   What Can You Do?
                 </h2>
                 <ul className="space-y-2 text-gray-300">
-                  <li>
-                    🔄 Try the confirmation link again from your email
-                  </li>
+                  <li>🔄 Try the confirmation link again from your email</li>
                   <li>📧 Check if you already confirmed your subscription</li>
                   <li>
-                    ✉️ Subscribe again if the link expired (links expire after
-                    7 days)
+                    ✉️ Subscribe again if the link expired (links expire after 7
+                    days)
                   </li>
                   <li>💬 Contact us if you continue having issues</li>
                 </ul>

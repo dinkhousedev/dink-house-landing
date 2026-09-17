@@ -1,13 +1,18 @@
 "use client";
 
 import React, { useState } from "react";
+import dynamic from "next/dynamic";
 import { Accordion, AccordionItem } from "@heroui/accordion";
-import { Icon } from "@iconify/react";
+import { Plus, Bell } from "lucide-react";
 import { Button } from "@heroui/button";
-import { Card, CardBody } from "@heroui/card";
+import { Card, CardBody } from "@heroui/react";
 
 import faqs from "./faqs-data";
-import WaitlistModal from "./WaitlistModal";
+
+// Dynamically import modal
+const WaitlistModal = dynamic(() => import("./WaitlistModal"), {
+  ssr: false,
+});
 
 export default function FAQsSection() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -44,7 +49,7 @@ export default function FAQsSection() {
           {faqs.map((item, i) => (
             <AccordionItem
               key={i}
-              indicator={<Icon icon="lucide:plus" width={24} />}
+              indicator={<Plus size={24} />}
               title={item.title}
             >
               {item.content}
@@ -56,16 +61,13 @@ export default function FAQsSection() {
       {/* Closing CTA Card */}
       <Card className="mt-12 max-w-4xl mx-auto bg-dink-lime">
         <CardBody className="text-center py-8 px-6">
-          <Icon
-            className="mx-auto mb-4 text-black"
-            icon="solar:bell-bold"
-            width={48}
-          />
+          <Bell className="mx-auto mb-4 text-black" size={48} />
           <h3 className="text-2xl sm:text-3xl font-bold text-black mb-3">
             Ready to Be Part of The Dink House Community?
           </h3>
           <p className="text-black/80 text-base mb-6 max-w-2xl mx-auto">
-            Join our notification list and be among the first to experience Bell County's premier pickleball facility
+            Join our notification list and be among the first to experience Bell
+            County&rsquo;s premier pickleball facility
           </p>
           <Button
             className="h-12 bg-black px-8 text-base font-bold uppercase text-dink-lime transition-all hover:scale-105"

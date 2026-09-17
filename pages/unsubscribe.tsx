@@ -1,14 +1,8 @@
-"use client";
-
 import React, { useEffect, useState } from "react";
-
 import { useRouter } from "next/router";
 
 import DefaultLayout from "@/layouts/default";
-
-const API_URL =
-  process.env.NEXT_PUBLIC_SUPABASE_URL || "https://wchxzbuuwssrnaxshseu.supabase.co";
-const ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
+import { logger } from "../lib/logger";
 
 export default function Unsubscribe() {
   const router = useRouter();
@@ -34,21 +28,15 @@ export default function Unsubscribe() {
     setStatus("loading");
 
     try {
-      const response = await fetch(
-        `${API_URL}/rest/v1/rpc/unsubscribe_newsletter`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            apikey: ANON_KEY,
-          },
-          body: JSON.stringify({
-            p_unsubscribe_token: token || null,
-            p_email: email || null,
-            p_reason: reason || null,
-          }),
-        },
-      );
+      const response = await fetch("/api/newsletter/unsubscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          token: token || null,
+          email: email || null,
+          reason: reason || null,
+        }),
+      });
 
       const result = await response.json();
 
@@ -68,7 +56,7 @@ export default function Unsubscribe() {
         );
       }
     } catch (error) {
-      console.error("Unsubscribe error:", error);
+      logger.error("Unsubscribe error:", error);
       setStatus("error");
       setMessage("Something went wrong. Please try again or contact support.");
     }
@@ -91,14 +79,12 @@ export default function Unsubscribe() {
 
               <div className="bg-[#1A1A1A] border-l-4 border-[#B3FF00] p-6 rounded-lg text-left mb-8">
                 <h2 className="text-xl font-bold text-[#B3FF00] mb-3 uppercase">
-                  You'll Miss Out On:
+                  You&apos;ll Miss Out On:
                 </h2>
                 <ul className="space-y-2 text-gray-300">
                   <li>🎯 Exclusive pickleball tips from pros</li>
                   <li>🏆 Early access to tournaments and events</li>
-                  <li>
-                    💚 First dibs on court bookings when we open in 2026
-                  </li>
+                  <li>💚 First dibs on court bookings when we open in 2026</li>
                   <li>📰 Community news and updates</li>
                 </ul>
               </div>
@@ -173,7 +159,7 @@ export default function Unsubscribe() {
                 </h2>
                 <p className="text-gray-400 mb-4">
                   You can resubscribe anytime by entering your email on our
-                  homepage. We'd love to have you back in the community!
+                  homepage. We&apos;d love to have you back in the community!
                 </p>
               </div>
 
@@ -210,7 +196,7 @@ export default function Unsubscribe() {
                 </h2>
                 <ul className="space-y-2 text-gray-300">
                   <li>🔄 Try the unsubscribe link again from your email</li>
-                  <li>📧 Check if you're already unsubscribed</li>
+                  <li>📧 Check if you&apos;re already unsubscribed</li>
                   <li>💬 Contact us directly for help</li>
                 </ul>
               </div>

@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
+
 import { MEDIA_URLS } from "@/config/media-urls";
 
 const VIDEO_URLS: readonly string[] = MEDIA_URLS.videos;
@@ -27,6 +28,7 @@ export default function VideoBanner() {
 
   useEffect(() => {
     const video = videoRef.current;
+
     if (!video) return;
 
     const handleVideoEnded = () => {
@@ -52,6 +54,7 @@ export default function VideoBanner() {
   // Reset and play video when index changes
   useEffect(() => {
     const video = videoRef.current;
+
     if (video && isClient) {
       video.load();
       // Attempt to play after a short delay to ensure load completes
@@ -72,13 +75,13 @@ export default function VideoBanner() {
       {/* Video Background */}
       <video
         ref={videoRef}
-        className="absolute inset-0 w-full h-full object-cover"
         autoPlay
         muted
         playsInline
+        className="absolute inset-0 w-full h-full object-cover"
+        controls={false}
         loop={VIDEO_URLS.length === 1}
         preload="auto"
-        controls={false}
       >
         <source src={VIDEO_URLS[currentVideoIndex]} type="video/mp4" />
         Your browser does not support the video tag.
@@ -90,17 +93,17 @@ export default function VideoBanner() {
       {/* Centered Logo with Fade-Out */}
       <div
         className={`absolute inset-0 flex items-center justify-center transition-opacity duration-[3000ms] ease-out ${
-          logoFaded ? 'opacity-0' : 'opacity-100'
+          logoFaded ? "opacity-0" : "opacity-100"
         }`}
       >
         <div className="relative w-[200px] h-[200px] sm:w-[200px] sm:h-[200px] lg:w-[200px] lg:h-[200px] rounded-2xl overflow-hidden">
           <Image
-            src={LOGO_URL}
-            alt="The Dink House Logo"
             fill
-            className="object-contain"
             priority
+            alt="The Dink House Logo"
+            className="object-contain"
             sizes="(max-width: 640px) 200px, (max-width: 1024px) 300px, 400px"
+            src={LOGO_URL}
           />
         </div>
       </div>

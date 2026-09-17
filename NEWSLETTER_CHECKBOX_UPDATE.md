@@ -5,28 +5,33 @@
 Added a required opt-in checkbox to the newsletter form for explicit user consent.
 
 ### Updated File
+
 `components/newsletter-form.tsx`
 
 ## Features Implemented
 
 ### ✅ Checkbox Input
+
 - **Required field** with red asterisk indicator
 - **Unchecked by default** (explicit opt-in)
 - Styled with brand color (#B3FF00)
 - Accessible with proper label association
 
 ### ✅ Form Validation
+
 - Submit button **disabled** until checkbox is checked
 - Client-side validation with error message
 - Checkbox state resets after successful submission
 
 ### ✅ GDPR Compliance
+
 - **Explicit consent language**: "I agree to receive email notifications..."
 - Clearly states what user will receive (court bookings, events, tips, offers)
 - Identifies the sender (The Dink House)
 - Required field (no pre-checked boxes)
 
 ### ✅ User Experience
+
 - Checkbox and label are clickable
 - Visual feedback on hover/focus
 - Maintains brand styling (#B3FF00 accent color)
@@ -36,11 +41,13 @@ Added a required opt-in checkbox to the newsletter form for explicit user consen
 ## UI Layout
 
 **Before:**
+
 ```
 [Email Input] [Subscribe Button]
 ```
 
 **After:**
+
 ```
 [Email Input] [Subscribe Button]
 [☐] I agree to receive email notifications... *
@@ -49,16 +56,20 @@ Added a required opt-in checkbox to the newsletter form for explicit user consen
 ## Form Behavior
 
 1. **Initial State:**
+
    - Checkbox: unchecked
    - Submit button: disabled (grayed out)
 
 2. **User checks checkbox:**
+
    - Submit button: enabled
 
 3. **User unchecks checkbox:**
+
    - Submit button: disabled again
 
 4. **User tries to submit without checking:**
+
    - Error message: "Please confirm that you want to receive notifications."
 
 5. **Successful submission:**
@@ -69,11 +80,13 @@ Added a required opt-in checkbox to the newsletter form for explicit user consen
 ## Code Changes
 
 ### State Management
+
 ```typescript
 const [acceptNotifications, setAcceptNotifications] = useState(false);
 ```
 
 ### Validation
+
 ```typescript
 if (!acceptNotifications) {
   setMessage({
@@ -85,11 +98,13 @@ if (!acceptNotifications) {
 ```
 
 ### Submit Button
+
 ```typescript
 disabled={loading || !acceptNotifications}
 ```
 
 ### Checkbox Component
+
 ```tsx
 <div className="flex items-start gap-3">
   <input
@@ -105,8 +120,8 @@ disabled={loading || !acceptNotifications}
     className="text-sm text-gray-700 cursor-pointer select-none"
     htmlFor="accept-notifications"
   >
-    I agree to receive email notifications about court bookings, events,
-    tips, and special offers from The Dink House.{" "}
+    I agree to receive email notifications about court bookings, events, tips,
+    and special offers from The Dink House.{" "}
     <span className="text-red-500">*</span>
   </label>
 </div>
@@ -127,12 +142,14 @@ disabled={loading || !acceptNotifications}
 ## Compliance Notes
 
 ### GDPR Requirements ✅
+
 - **Affirmative action required** (unchecked by default)
 - **Clear consent language** (what user is consenting to)
 - **Granular consent** (specific about notification types)
 - **Easy to understand** (plain language)
 
 ### Best Practices ✅
+
 - No pre-checked boxes
 - Separate from other agreements
 - Clear and conspicuous
@@ -142,6 +159,7 @@ disabled={loading || !acceptNotifications}
 ## Browser Compatibility
 
 Works on all modern browsers:
+
 - Chrome/Edge (Chromium)
 - Firefox
 - Safari
@@ -150,6 +168,7 @@ Works on all modern browsers:
 ## Future Enhancements
 
 Consider adding:
+
 - Link to Privacy Policy in checkbox label
 - Preference center for notification types
 - Option to choose notification frequency

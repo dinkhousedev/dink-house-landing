@@ -51,12 +51,14 @@ npm run dev
 ## How It Works
 
 ### Frontend (Contact Form)
+
 - The reCAPTCHA widget appears at the bottom of the contact form
 - Users must complete the challenge before submitting
 - The form validates that reCAPTCHA was completed
 - A token is sent with the form data to the API
 
 ### Backend (API Endpoint)
+
 - The API endpoint receives the reCAPTCHA token
 - It verifies the token with Google's servers
 - Only verified submissions are processed
@@ -65,6 +67,7 @@ npm run dev
 ## Testing
 
 ### Development Testing
+
 1. Open the contact form on your local development server
 2. Fill in the form fields
 3. Complete the reCAPTCHA challenge
@@ -72,7 +75,9 @@ npm run dev
 5. Verify that the submission is successful
 
 ### Without Keys (Development Only)
+
 If you don't have reCAPTCHA keys configured in development:
+
 - The reCAPTCHA widget won't appear
 - Form submissions will still work (verification is skipped)
 - A warning will appear in the console
@@ -80,6 +85,7 @@ If you don't have reCAPTCHA keys configured in development:
 ## Production Deployment
 
 For production deployment, ensure:
+
 1. Your production domain is added to the reCAPTCHA site settings
 2. Environment variables are set in your production environment
 3. Both `NEXT_PUBLIC_RECAPTCHA_SITE_KEY` and `RECAPTCHA_SECRET_KEY` are configured
@@ -87,16 +93,19 @@ For production deployment, ensure:
 ## Troubleshooting
 
 ### reCAPTCHA not appearing
+
 - Check that `NEXT_PUBLIC_RECAPTCHA_SITE_KEY` is set in `.env.local`
 - Ensure you've restarted the development server after adding the key
 - Verify the site key is correct
 
 ### "reCAPTCHA verification failed" error
+
 - Check that `RECAPTCHA_SECRET_KEY` is set correctly
 - Ensure your domain is added to the reCAPTCHA site settings
 - Check the browser console for any errors
 
 ### Testing in development
+
 - Add `localhost` to your reCAPTCHA domains in Google Admin Console
 - Use the test keys provided by Google for automated testing (if needed)
 
@@ -110,5 +119,6 @@ For production deployment, ensure:
 ## Support
 
 For issues with reCAPTCHA:
+
 - Check [Google reCAPTCHA Documentation](https://developers.google.com/recaptcha/docs/display)
 - Review the implementation in `/components/contact-form.tsx` and `/pages/api/contact-form.ts`

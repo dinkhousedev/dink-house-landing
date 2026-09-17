@@ -5,14 +5,20 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
+    "build:production": "next build",
     "start": "next start",
-    "lint": "eslint --fix"
+    "lint": "eslint --fix",
+    "postinstall": "prisma generate",
+    "backend": "npm run dev --prefix backend",
+    "backend:build": "npm run build --prefix backend",
+    "dev:all": "echo \"Run: npm run backend (terminal 1) and npm run dev (terminal 2)\""
   },
   "dependencies": {
     "@heroui/accordion": "^2.2.23",
     "@heroui/button": "2.2.26",
     "@heroui/chip": "^2.2.21",
     "@heroui/code": "2.2.20",
+    "@heroui/image": "^2.2.19",
     "@heroui/input": "2.4.27",
     "@heroui/kbd": "2.2.21",
     "@heroui/link": "2.2.22",
@@ -25,6 +31,7 @@
     "@heroui/switch": "2.2.23",
     "@heroui/system": "2.4.22",
     "@heroui/theme": "2.4.26",
+    "@prisma/client": "^6.19.3",
     "@react-aria/visually-hidden": "3.8.27",
     "@sendgrid/mail": "^8.1.6",
     "@stripe/stripe-js": "^8.0.0",
@@ -33,6 +40,7 @@
     "clsx": "2.1.1",
     "framer-motion": "11.18.2",
     "intl-messageformat": "10.7.16",
+    "lucide-react": "^0.546.0",
     "micro": "^10.0.1",
     "next": "15.3.9",
     "next-themes": "0.4.6",
@@ -67,6 +75,7 @@
     "globals": "16.0.0",
     "postcss": "8.5.6",
     "prettier": "3.5.3",
+    "prisma": "^6.19.3",
     "tailwind-variants": "3.1.1",
     "tailwindcss": "4.1.11",
     "typescript": "5.6.3"

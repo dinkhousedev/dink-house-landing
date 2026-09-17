@@ -14,7 +14,6 @@ const SpotlightImage: React.FC<SpotlightImageProps> = ({
   priority = false,
 }) => {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-  const [isHovering, setIsHovering] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [isAutoAnimating, setIsAutoAnimating] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -116,10 +115,6 @@ const SpotlightImage: React.FC<SpotlightImageProps> = ({
         className="relative w-full h-full overflow-hidden cursor-none"
         initial={{ opacity: 0 }}
         transition={{ duration: 1.5, ease: "easeOut" }}
-        onMouseEnter={() => setIsHovering(true)}
-        onMouseLeave={() => setIsHovering(false)}
-        onTouchEnd={() => setIsHovering(false)}
-        onTouchStart={() => setIsHovering(true)}
       >
         <Image
           fill

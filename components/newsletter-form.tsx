@@ -2,9 +2,9 @@
 
 import React, { useState } from "react";
 
-import { submitNewsletterSignup } from "@/lib/api";
-
 export default function NewsletterForm() {
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [acceptNotifications, setAcceptNotifications] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -21,6 +21,7 @@ export default function NewsletterForm() {
         type: "error",
         text: "Please confirm that you want to receive notifications.",
       });
+
       return;
     }
 
@@ -28,27 +29,51 @@ export default function NewsletterForm() {
     setMessage(null);
 
     try {
-      const result = await submitNewsletterSignup({ email });
+      const response = await fetch("/api/subscribers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: email.trim().toLowerCase(),
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          source: "website",
+        }),
+      });
 
-      if (result.success) {
-        if (result.already_subscribed) {
-          setMessage({
-            type: "success",
-            text: "You are already subscribed to our newsletter!",
-          });
-        } else {
-          setMessage({
-            type: "success",
-            text: "Welcome to The Dink House! 🎾 Check your email for updates on our launch.",
-          });
-          setEmail("");
-          setAcceptNotifications(false);
-        }
+      const result = (await response.json()) as {
+        success?: boolean;
+        duplicate?: boolean;
+        error?: string;
+      };
+
+      if (!response.ok) {
+        throw new Error(result.error || "Something went wrong");
+      }
+
+      if (result.duplicate) {
+        setMessage({
+          type: "success",
+          text: "You are already subscribed to our newsletter!",
+        });
+      } else if (result.success) {
+        setMessage({
+          type: "success",
+          text: "Welcome to The Dink House! 🎾 Check your email for updates on our launch.",
+        });
+        setFirstName("");
+        setLastName("");
+        setEmail("");
+        setAcceptNotifications(false);
+      } else {
+        throw new Error(result.error || "Failed to subscribe");
       }
     } catch (error) {
       setMessage({
         type: "error",
-        text: "Something went wrong. Please try again later.",
+        text:
+          error instanceof Error
+            ? error.message
+            : "Something went wrong. Please try again later.",
       });
     } finally {
       setLoading(false);
@@ -61,10 +86,31 @@ export default function NewsletterForm() {
         Join Our Newsletter
       </h3>
       <p className="mb-6 text-gray-600">
-        Get exclusive access to court bookings, events, pro tips, and special offers.
+        Get exclusive access to court bookings, events, pro tips, and special
+        offers.
       </p>
 
       <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <input
+            required
+            className="flex-1 px-4 py-3 border-2 border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#B3FF00] focus:border-[#B3FF00] transition-all"
+            disabled={loading}
+            placeholder="First Name"
+            type="text"
+            value={firstName}
+            onChange={(e) => setFirstName(e.target.value)}
+          />
+          <input
+            required
+            className="flex-1 px-4 py-3 border-2 border-gray-300 focus:outline-none focus:ring-2 focus:ring-[#B3FF00] focus:border-[#B3FF00] transition-all"
+            disabled={loading}
+            placeholder="Last Name"
+            type="text"
+            value={lastName}
+            onChange={(e) => setLastName(e.target.value)}
+          />
+        </div>
         <div className="flex flex-col sm:flex-row gap-3">
           <input
             required
