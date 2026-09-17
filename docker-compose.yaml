@@ -1,10 +1,11 @@
 # Coolify Docker Compose — Next.js landing + Prisma Express backend
 #
 # Coolify UI checklist:
-# 1. Domain / FQDN goes on service `web` only (NOT backend)
-# 2. Ports Exposes for `web` = 3000
-# 3. Do NOT set a shared PORT env var in Coolify (it overrides both services)
-# 4. backend stays internal; Next proxies via BACKEND_URL=http://backend:3001
+# 1. Domain / FQDN goes on service `web` only (NOT backend) — set as https://thedinkhousepb.com:3000
+# 2. Do NOT set a shared PORT env var in Coolify (it overrides both services)
+# 3. Do NOT add a custom `networks:` block — Coolify creates a stack network so
+#    `web` can reach `backend` at http://backend:3001
+# 4. backend stays internal (no public domain)
 
 services:
   web:
@@ -15,7 +16,7 @@ services:
       - "3000"
     environment:
       NODE_ENV: production
-      # Hardcoded — do not use ${PORT}; Coolify shared PORT=3001 breaks the proxy
+      # Hardcoded — do not use ${PORT}; Coolify shared PORT breaks the proxy
       PORT: "3000"
       HOSTNAME: "0.0.0.0"
       BACKEND_URL: http://backend:3001
@@ -30,8 +31,6 @@ services:
       backend:
         condition: service_healthy
     restart: unless-stopped
-    networks:
-      - coolify
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:3000"]
       interval: 30s
@@ -49,7 +48,7 @@ services:
       NODE_ENV: production
       PORT: "3001"
       HOSTNAME: "0.0.0.0"
-      DATABASE_URL: ${DATABASE_URL}
+      DATABASE_URL: ${DATABASE_URL:?}
       SITE_URL: ${SITE_URL:-https://thedinkhousepb.com}
       CORS_ORIGIN: ${CORS_ORIGIN:-https://thedinkhousepb.com,https://www.thedinkhousepb.com}
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
@@ -58,15 +57,9 @@ services:
       BREVO_FROM_EMAIL: ${BREVO_FROM_EMAIL:-contact@thedinkhouse.com}
       BREVO_SMTP_USER: ${BREVO_SMTP_USER}
     restart: unless-stopped
-    networks:
-      - coolify
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:3001/health"]
       interval: 30s
       timeout: 5s
       retries: 3
       start_period: 25s
-
-networks:
-  coolify:
-    external: true

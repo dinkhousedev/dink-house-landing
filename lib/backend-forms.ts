@@ -51,11 +51,17 @@ export async function upsertLaunchSubscriber(params: {
       message: data.message,
     };
   } catch (error) {
+    const raw =
+      error instanceof Error ? error.message : "Backend unavailable";
+    const message =
+      raw === "fetch failed" || /ECONNREFUSED|ENOTFOUND|ETIMEDOUT/i.test(raw)
+        ? "Service temporarily unavailable. Please try again in a moment."
+        : raw;
+
     return {
       ok: false,
       status: 503,
-      message:
-        error instanceof Error ? error.message : "Backend unavailable",
+      message,
     };
   }
 }
@@ -111,11 +117,17 @@ export async function insertContactInquiry(params: {
 
     return { ok: true, submissionId: data.submissionId };
   } catch (error) {
+    const raw =
+      error instanceof Error ? error.message : "Backend unavailable";
+    const message =
+      raw === "fetch failed" || /ECONNREFUSED|ENOTFOUND|ETIMEDOUT/i.test(raw)
+        ? "Service temporarily unavailable. Please try again in a moment."
+        : raw;
+
     return {
       ok: false,
       status: 503,
-      message:
-        error instanceof Error ? error.message : "Backend unavailable",
+      message,
     };
   }
 }

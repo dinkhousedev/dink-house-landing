@@ -186,7 +186,9 @@ const WaitlistModal: React.FC<WaitlistModalProps> = ({ isOpen, onClose }) => {
 
                 {errors.submit && (
                   <div className="p-3 bg-red-100 text-red-700 rounded-lg">
-                    {errors.submit}
+                    {errors.submit === "fetch failed"
+                      ? "Service temporarily unavailable. Please try again in a moment."
+                      : errors.submit}
                   </div>
                 )}
 
@@ -195,6 +197,10 @@ const WaitlistModal: React.FC<WaitlistModalProps> = ({ isOpen, onClose }) => {
                     <Input
                       isRequired
                       autoComplete="given-name"
+                      classNames={{
+                        input: "text-foreground",
+                        inputWrapper: "bg-default-100 dark:bg-default-100",
+                      }}
                       errorMessage={errors.firstName}
                       isInvalid={!!errors.firstName}
                       label="First Name"
@@ -207,6 +213,10 @@ const WaitlistModal: React.FC<WaitlistModalProps> = ({ isOpen, onClose }) => {
                     <Input
                       isRequired
                       autoComplete="family-name"
+                      classNames={{
+                        input: "text-foreground",
+                        inputWrapper: "bg-default-100 dark:bg-default-100",
+                      }}
                       errorMessage={errors.lastName}
                       isInvalid={!!errors.lastName}
                       label="Last Name"
@@ -219,6 +229,10 @@ const WaitlistModal: React.FC<WaitlistModalProps> = ({ isOpen, onClose }) => {
                     <Input
                       isRequired
                       autoComplete="email"
+                      classNames={{
+                        input: "text-foreground",
+                        inputWrapper: "bg-default-100 dark:bg-default-100",
+                      }}
                       errorMessage={errors.email}
                       isInvalid={!!errors.email}
                       label="Email"
