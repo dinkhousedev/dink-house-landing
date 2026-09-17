@@ -55,3 +55,4 @@ next.config.js
 # Local DB dumps
 data-export/
 dink-house-db-export.zip
+backend/qa.txt

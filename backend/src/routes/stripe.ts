@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import Stripe from "stripe";
-import { Prisma } from "@prisma/client";
+import { Prisma } from "../generated/prisma/client.js";
 
 import { prisma } from "../db.js";
 import { sendBrevoEmail } from "../lib/brevo.js";
