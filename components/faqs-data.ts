@@ -2,7 +2,7 @@ const faqs = [
   {
     title: "When will The Dink House open?",
     content:
-      "We're excited to announce that The Dink House will be opening in 2026! We're currently in the construction phase and will provide more specific opening dates as we get closer to completion. Join our waitlist to be the first to know when we're ready to welcome players.",
+      "The Dink House grand opening date is TBA. We're currently in the construction phase and will share a specific opening date as soon as it's confirmed. Join our waitlist to be the first to know when we're ready to welcome players.",
   },
   {
     title: "What makes The Dink House special?",

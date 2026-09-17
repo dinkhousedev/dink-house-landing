@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
+import NextHead from "next/head";
 import { Button } from "@heroui/button";
 import {
   ArrowRight,
@@ -14,6 +15,7 @@ import {
 } from "lucide-react";
 
 import DefaultLayout from "@/layouts/default";
+import { MEDIA_URLS } from "@/config/media-urls";
 
 // Dynamically import below-the-fold components
 const VideoBanner = dynamic(() => import("@/components/video-banner"), {
@@ -21,7 +23,6 @@ const VideoBanner = dynamic(() => import("@/components/video-banner"), {
 });
 const SupabaseImageCarousel = dynamic(
   () => import("@/components/supabase-image-carousel"),
-  { ssr: false },
 );
 const RoadmapStepper = dynamic(() => import("@/components/roadmap-stepper"), {
   ssr: false,
@@ -59,6 +60,11 @@ export default function IndexPage() {
 
   return (
     <DefaultLayout>
+      <NextHead>
+        {MEDIA_URLS.courtImages.slice(0, 2).map((src) => (
+          <link key={src} as="image" href={src} rel="preload" />
+        ))}
+      </NextHead>
       {/* Video Banner */}
       <VideoBanner />
 

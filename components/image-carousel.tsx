@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { LazyMotion, domAnimation, m, AnimatePresence } from "framer-motion";
-import { Image } from "@heroui/image";
+import Image from "next/image";
 import { Button } from "@heroui/button";
 
 interface ImageCarouselProps {
@@ -60,6 +60,16 @@ export const ImageCarousel = ({
     setPage([index, newDirection]);
   };
 
+  // Warm the browser cache so slide changes don't wait on a network fetch.
+  useEffect(() => {
+    images.forEach(({ src }) => {
+      const img = new window.Image();
+
+      img.decoding = "async";
+      img.src = src;
+    });
+  }, [images]);
+
   // Auto-advance slides
   useEffect(() => {
     if (isPaused || !autoplayInterval) return;
@@ -75,19 +85,28 @@ export const ImageCarousel = ({
     return null;
   }
 
+  const currentImage = images[imageIndex];
+
   return (
     <div
-      className={`relative w-full overflow-hidden ${className}`}
+      className={`relative w-full overflow-hidden bg-neutral-900 ${className}`}
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
     >
+      {/* Keep every slide in the document so the browser can fetch them up front. */}
+      <div className="sr-only" aria-hidden="true">
+        {images.map((image) => (
+          <img key={image.src} alt="" src={image.src} />
+        ))}
+      </div>
+
       <LazyMotion features={domAnimation}>
         <div className="relative w-full h-full">
           <AnimatePresence custom={direction} initial={false}>
             <m.div
               key={page}
               animate="center"
-              className="absolute inset-0 flex items-center justify-center"
+              className="absolute inset-0"
               custom={direction}
               drag="x"
               dragConstraints={{ left: 0, right: 0 }}
@@ -110,12 +129,14 @@ export const ImageCarousel = ({
               }}
             >
               <Image
-                alt={images[imageIndex].alt}
-                className="h-full w-full object-cover object-center"
-                loading="lazy"
-                sizes="(max-width: 640px) 640px, (max-width: 1024px) 800px, 1200px"
-                src={images[imageIndex].src}
-                srcSet={images[imageIndex].srcSet}
+                fill
+                unoptimized
+                alt={currentImage.alt}
+                className="object-cover object-center"
+                decoding="async"
+                loading="eager"
+                sizes="(max-width: 640px) 100vw, (max-width: 1280px) 100vw, 1280px"
+                src={currentImage.src}
               />
             </m.div>
           </AnimatePresence>

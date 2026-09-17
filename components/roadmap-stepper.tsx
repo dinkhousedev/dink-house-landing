@@ -33,7 +33,7 @@ export default function RoadmapStepper() {
       title: (
         <div className="flex flex-col">
           <span className="font-semibold">Grand Opening</span>
-          <span className="text-tiny text-primary">October 2026</span>
+          <span className="text-tiny text-primary">TBA</span>
           <span className="text-tiny text-default-400 hidden md:block mt-1">
             Facility Launch
           </span>
@@ -116,7 +116,7 @@ function getStepDescription(step: number): string {
     case 1:
       return "Construction begins with groundbreaking ceremony. Site preparation, foundation work, and building of multiple indoor and outdoor pickleball courts. Installation of specialized flooring, lighting, and amenities.";
     case 2:
-      return "The Dink House facility grand opening celebration. The premier pickleball complex will be officially opened with a ribbon-cutting ceremony, exhibition matches, and community tournament.";
+      return "The Dink House facility grand opening celebration. Date is TBA. The premier pickleball complex will be officially opened with a ribbon-cutting ceremony, exhibition matches, and community tournament.";
     default:
       return "";
   }

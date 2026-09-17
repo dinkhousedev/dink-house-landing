@@ -391,7 +391,7 @@ export function generateWaitlistUpdateEmailHTML(
       Thank you for joining The Dink House waitlist. Your name is on the list, and that means a lot to us.
     </p>
     <p style="margin: 0 0 8px; font-family: ${fontStack()}; font-size: 16px; line-height: 1.6; color: ${BRAND.white};">
-      We're moving full steam ahead. Bell County's first indoor pickleball home is taking shape — 10 championship courts, year-round play, and a community that lives for the dink.
+      We're moving full steam ahead. Bell County's first indoor pickleball home is taking shape — 6 to 10 championship courts, year-round play, and a community that lives for the dink.
     </p>
     ${panel(
       `<p style="margin: 0; font-family: ${fontStack()}; font-size: 15px; line-height: 1.6; color: ${BRAND.white};">We don't have exact dates yet, and we won't guess. When we lock in a timeline, waitlist members hear first — along with membership details and pre-opening events.</p>`,
@@ -446,7 +446,7 @@ Hi ${data.first_name},
 
 Thank you for joining The Dink House waitlist. Your name is on the list, and that means a lot to us.
 
-We're moving full steam ahead. Bell County's first indoor pickleball home is taking shape — 10 championship courts, year-round play, and a community that lives for the dink.
+We're moving full steam ahead. Bell County's first indoor pickleball home is taking shape — 6 to 10 championship courts, year-round play, and a community that lives for the dink.
 
 ON THE TIMELINE
 We don't have exact dates yet, and we won't guess. When we lock in a timeline, waitlist members hear first — along with membership details and pre-opening events.
