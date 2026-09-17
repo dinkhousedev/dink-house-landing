@@ -1,9 +1,9 @@
 import type { Request, Response } from "express";
 import Stripe from "stripe";
 import { Prisma } from "@prisma/client";
-import sgMail from "@sendgrid/mail";
 
 import { prisma } from "../db.js";
+import { sendBrevoEmail } from "../lib/brevo.js";
 import {
   generateContributionEmailHTML,
   generateContributionEmailText,
@@ -13,10 +13,6 @@ import {
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
   apiVersion: "2025-10-29.clover",
 });
-
-if (process.env.SENDGRID_API_KEY) {
-  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
-}
 
 const siteUrl = () =>
   process.env.SITE_URL || process.env.NEXT_PUBLIC_SITE_URL || "https://thedinkhousepb.com";
@@ -277,12 +273,10 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       const recipient = String(emailResult.recipient);
       const emailLogId = String(emailResult.email_log_id);
 
-      if (process.env.SENDGRID_API_KEY) {
+      if (process.env.BREVO_API_KEY) {
         try {
-          const [sendResult] = await sgMail.send({
+          const sendResult = await sendBrevoEmail({
             to: recipient,
-            from:
-              process.env.SENDGRID_FROM_EMAIL || "support@thedinkhouse.com",
             subject: "Thank You for Your Contribution to The Dink House!",
             html: generateContributionEmailHTML({
               ...emailData,
@@ -298,24 +292,25 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
             where: { id: emailLogId },
             data: {
               status: "sent",
+              provider: "brevo",
               sent_at: new Date(),
-              provider_message_id:
-                sendResult?.headers?.["x-message-id"] || null,
+              provider_message_id: sendResult.messageId,
             },
           });
         } catch (sendErr) {
-          console.error("SendGrid error:", sendErr);
+          console.error("Brevo error:", sendErr);
           await prisma.email_logs.update({
             where: { id: emailLogId },
             data: {
               status: "failed",
+              provider: "brevo",
               error_message:
-                sendErr instanceof Error ? sendErr.message : "SendGrid error",
+                sendErr instanceof Error ? sendErr.message : "Brevo error",
             },
           });
         }
       } else {
-        console.warn("SENDGRID_API_KEY not set; email not sent");
+        console.warn("BREVO_API_KEY not set; email not sent");
       }
     }
   } catch (emailErr) {

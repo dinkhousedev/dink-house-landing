@@ -52,8 +52,9 @@ services:
       CORS_ORIGIN: ${CORS_ORIGIN:-https://thedinkhousepb.com,https://www.thedinkhousepb.com}
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
       STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET}
-      SENDGRID_API_KEY: ${SENDGRID_API_KEY}
-      SENDGRID_FROM_EMAIL: ${SENDGRID_FROM_EMAIL:-support@thedinkhouse.com}
+      BREVO_API_KEY: ${BREVO_API_KEY}
+      BREVO_FROM_EMAIL: ${BREVO_FROM_EMAIL:-contact@thedinkhouse.com}
+      BREVO_SMTP_USER: ${BREVO_SMTP_USER}
     restart: unless-stopped
     networks:
       - coolify
