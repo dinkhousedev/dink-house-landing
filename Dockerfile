@@ -2,17 +2,18 @@ FROM node:20-alpine AS base
 # Retry apk — Coolify builders sometimes hit transient Alpine CDN/DNS errors
 RUN set -eux; \
   for i in 1 2 3 4 5 6 7 8 9 10; do \
-    apk add --no-cache libc6-compat && break; \
+    apk add --no-cache libc6-compat openssl && break; \
     echo "apk add failed (attempt $i/10), retrying..."; \
     sleep 3; \
   done; \
-  # busybox wget (from alpine base) is enough for HEALTHCHECK
   command -v wget >/dev/null
 
 FROM base AS deps
 WORKDIR /app
 COPY package.json package-lock.json* ./
+COPY prisma ./prisma
 RUN npm ci
+RUN npx prisma generate
 
 FROM base AS builder
 WORKDIR /app
@@ -20,6 +21,8 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
+# Prisma generate again in case schema changed vs lockfile stage
+RUN npx prisma generate
 RUN npm run build
 
 FROM base AS runner
@@ -35,11 +38,13 @@ RUN addgroup --system --gid 1001 nodejs \
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+# Prisma engines for Alpine
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@prisma/client ./node_modules/@prisma/client
 
 USER nextjs
 EXPOSE 3000
 
-# Coolify may inject PORT=3001 from shared env — force 3000 for this image
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
   CMD wget -q --spider http://127.0.0.1:3000/ || exit 1
 

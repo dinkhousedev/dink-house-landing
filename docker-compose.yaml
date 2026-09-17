@@ -20,6 +20,8 @@ services:
       PORT: "3000"
       HOSTNAME: "0.0.0.0"
       BACKEND_URL: http://backend:3001
+      # Landing APIs (subscribers/campaigns/contact) use Prisma in Next directly
+      DATABASE_URL: ${DATABASE_URL:?}
       NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-https://thedinkhousepb.com}
       SITE_URL: ${SITE_URL:-https://thedinkhousepb.com}
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY}
@@ -27,9 +29,9 @@ services:
       NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY:-}
       RATE_LIMIT_PER_MINUTE: ${RATE_LIMIT_PER_MINUTE:-5}
       RATE_LIMIT_PER_HOUR: ${RATE_LIMIT_PER_HOUR:-50}
+    # Backend still used for Stripe checkout/webhook; don't block web on it
     depends_on:
-      backend:
-        condition: service_healthy
+      - backend
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:3000"]

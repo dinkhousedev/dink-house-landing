@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 
-import { getBackendUrl } from "../../../lib/backend";
+import { listFoundersWallData } from "../../../lib/backend-forms";
 
 export default async function handler(
   req: NextApiRequest,
@@ -11,16 +11,14 @@ export default async function handler(
   }
 
   try {
-    const response = await fetch(
-      `${getBackendUrl()}/api/crowdfunding/founders-wall`,
-    );
-    const data = await response.json();
+    const data = await listFoundersWallData();
 
-    return res.status(response.status).json(data);
+    return res.status(200).json(data);
   } catch (error) {
-    return res.status(502).json({
+    return res.status(500).json({
       success: false,
-      error: error instanceof Error ? error.message : "Backend unavailable",
+      error:
+        error instanceof Error ? error.message : "Failed to load founders wall",
     });
   }
 }

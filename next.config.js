@@ -67,6 +67,11 @@ const nextConfig = {
     // Use commit hash or timestamp for production builds
     return process.env.BUILD_ID || `build-${Date.now()}`;
   },
+  // Keep Prisma query engine in standalone output
+  outputFileTracingIncludes: {
+    "/api/**/*": ["./node_modules/.prisma/**/*", "./node_modules/@prisma/client/**/*"],
+    "/*": ["./node_modules/.prisma/**/*", "./node_modules/@prisma/client/**/*"],
+  },
 };
 
 module.exports = nextConfig;

@@ -8,6 +8,7 @@
     "build:production": "next build",
     "start": "next start",
     "lint": "eslint --fix",
+    "postinstall": "prisma generate",
     "backend": "npm run dev --prefix backend",
     "backend:build": "npm run build --prefix backend",
     "dev:all": "echo \"Run: npm run backend (terminal 1) and npm run dev (terminal 2)\""
@@ -30,6 +31,7 @@
     "@heroui/switch": "2.2.23",
     "@heroui/system": "2.4.22",
     "@heroui/theme": "2.4.26",
+    "@prisma/client": "^6.19.3",
     "@react-aria/visually-hidden": "3.8.27",
     "@sendgrid/mail": "^8.1.6",
     "@stripe/stripe-js": "^8.0.0",
@@ -73,6 +75,7 @@
     "globals": "16.0.0",
     "postcss": "8.5.6",
     "prettier": "3.5.3",
+    "prisma": "^6.19.3",
     "tailwind-variants": "3.1.1",
     "tailwindcss": "4.1.11",
     "typescript": "5.6.3"

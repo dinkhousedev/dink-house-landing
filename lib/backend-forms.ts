@@ -1,4 +1,6 @@
-import { backendFetch } from "./backend";
+import { Prisma } from "@prisma/client";
+
+import { prisma } from "./prisma";
 
 export type SubscriberUpsertResult =
   | { ok: true; duplicate: true }
@@ -13,55 +15,68 @@ export async function upsertLaunchSubscriber(params: {
   referrerUrl?: string | null;
 }): Promise<SubscriberUpsertResult> {
   try {
-    const res = await backendFetch("/api/subscribers", {
-      method: "POST",
-      body: JSON.stringify({
-        email: params.email,
-        firstName: params.firstName,
-        lastName: params.lastName,
-        source: params.source,
-      }),
-      headers: params.referrerUrl
-        ? { Referer: params.referrerUrl }
-        : undefined,
+    const normalizedEmail = params.email.trim().toLowerCase();
+    const sourceVal =
+      typeof params.source === "string" && params.source.trim()
+        ? params.source.trim()
+        : "website";
+
+    const existing = await prisma.launch_subscribers.findUnique({
+      where: { email: normalizedEmail },
+      select: { id: true, is_active: true },
     });
 
-    const data = (await res.json()) as {
-      success?: boolean;
-      duplicate?: boolean;
-      message?: string;
-      error?: string;
-    };
+    if (existing) {
+      if (existing.is_active) {
+        return { ok: true, duplicate: true };
+      }
 
-    if (!res.ok || !data.success) {
+      await prisma.launch_subscribers.update({
+        where: { id: existing.id },
+        data: {
+          is_active: true,
+          status: "active",
+          subscription_date: new Date(),
+          unsubscribed_at: null,
+          first_name: params.firstName.trim(),
+          last_name: params.lastName.trim(),
+          source: sourceVal,
+        },
+      });
+
       return {
-        ok: false,
-        status: res.status || 500,
-        message: data.error || data.message || "Failed to subscribe",
+        ok: true,
+        duplicate: false,
+        message: "Subscription reactivated successfully",
       };
     }
 
-    if (data.duplicate) {
-      return { ok: true, duplicate: true };
-    }
+    await prisma.launch_subscribers.create({
+      data: {
+        email: normalizedEmail,
+        first_name: params.firstName.trim(),
+        last_name: params.lastName.trim(),
+        source: sourceVal,
+        is_active: true,
+        status: "active",
+        metadata: params.referrerUrl
+          ? ({ referrer_url: params.referrerUrl } as Prisma.InputJsonValue)
+          : undefined,
+      },
+    });
 
     return {
       ok: true,
       duplicate: false,
-      message: data.message,
+      message:
+        "Successfully joined the waitlist! We'll notify you when we open.",
     };
   } catch (error) {
-    const raw =
-      error instanceof Error ? error.message : "Backend unavailable";
-    const message =
-      raw === "fetch failed" || /ECONNREFUSED|ENOTFOUND|ETIMEDOUT/i.test(raw)
-        ? "Service temporarily unavailable. Please try again in a moment."
-        : raw;
-
     return {
       ok: false,
-      status: 503,
-      message,
+      status: 500,
+      message:
+        error instanceof Error ? error.message : "Failed to subscribe",
     };
   }
 }
@@ -83,51 +98,82 @@ export async function insertContactInquiry(params: {
   referer?: string | null;
 }): Promise<ContactInsertResult> {
   try {
-    const res = await backendFetch("/api/contact", {
-      method: "POST",
-      body: JSON.stringify({
-        firstName: params.firstName,
-        lastName: params.lastName,
-        email: params.email,
+    const name =
+      `${params.firstName.trim()} ${params.lastName.trim()}`.trim();
+
+    const row = await prisma.contact_inquiries.create({
+      data: {
+        name,
+        email: params.email.trim().toLowerCase(),
         message: params.message,
-        phone: params.phone,
-        company: params.company,
-        subject: params.subject,
-      }),
-      headers: {
-        ...(params.referer ? { Referer: params.referer } : {}),
-        ...(params.userAgent ? { "User-Agent": params.userAgent } : {}),
-        ...(params.ip ? { "X-Forwarded-For": params.ip } : {}),
+        phone: params.phone || null,
+        subject: params.subject || null,
+        inquiry_type: "website",
+        ip_address: params.ip || null,
+        user_agent: params.userAgent || null,
+        referrer: params.referer || null,
+        metadata: {
+          company: params.company || null,
+          first_name: params.firstName.trim(),
+          last_name: params.lastName.trim(),
+          source: "website",
+          form_type: "contact",
+          timestamp: new Date().toISOString(),
+        } as Prisma.InputJsonValue,
       },
+      select: { id: true },
     });
 
-    const data = (await res.json()) as {
-      success?: boolean;
-      submissionId?: string;
-      message?: string;
-    };
-
-    if (!res.ok || !data.success || !data.submissionId) {
-      return {
-        ok: false,
-        status: res.status || 500,
-        message: data.message || "Failed to store submission",
-      };
-    }
-
-    return { ok: true, submissionId: data.submissionId };
+    return { ok: true, submissionId: row.id };
   } catch (error) {
-    const raw =
-      error instanceof Error ? error.message : "Backend unavailable";
-    const message =
-      raw === "fetch failed" || /ECONNREFUSED|ENOTFOUND|ETIMEDOUT/i.test(raw)
-        ? "Service temporarily unavailable. Please try again in a moment."
-        : raw;
-
     return {
       ok: false,
-      status: 503,
-      message,
+      status: 500,
+      message:
+        error instanceof Error
+          ? error.message
+          : "Failed to store submission",
     };
   }
+}
+
+export async function listCampaignsData() {
+  const campaigns = await prisma.campaign_types.findMany({
+    where: { is_active: true },
+    orderBy: { display_order: "asc" },
+  });
+
+  const tiers = await prisma.contribution_tiers.findMany({
+    where: { is_active: true },
+    orderBy: { display_order: "asc" },
+  });
+
+  return {
+    success: true as const,
+    campaigns: campaigns.map((c) => ({
+      ...c,
+      goal_amount: Number(c.goal_amount),
+      current_amount: Number(c.current_amount ?? 0),
+    })),
+    tiers: tiers.map((t) => ({
+      ...t,
+      amount: Number(t.amount),
+      benefits: t.benefits,
+      metadata: t.metadata,
+    })),
+  };
+}
+
+export async function listFoundersWallData() {
+  const founders = await prisma.founders_wall.findMany({
+    orderBy: [{ is_featured: "desc" }, { total_contributed: "desc" }],
+  });
+
+  return {
+    success: true as const,
+    founders: founders.map((f) => ({
+      ...f,
+      total_contributed: Number(f.total_contributed),
+    })),
+  };
 }
