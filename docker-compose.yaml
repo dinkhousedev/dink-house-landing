@@ -1,8 +1,10 @@
 # Coolify Docker Compose — Next.js landing + Prisma Express backend
-# In Coolify: New Resource → Docker Compose → point at this repo / docker-compose.yaml
 #
-# Public domain goes on `web` only. `backend` stays on the internal coolify network;
-# Next proxies /api/* → http://backend:3001
+# Coolify UI checklist:
+# 1. Domain / FQDN goes on service `web` only (NOT backend)
+# 2. Ports Exposes for `web` = 3000
+# 3. Do NOT set a shared PORT env var in Coolify (it overrides both services)
+# 4. backend stays internal; Next proxies via BACKEND_URL=http://backend:3001
 
 services:
   web:
@@ -13,9 +15,9 @@ services:
       - "3000"
     environment:
       NODE_ENV: production
+      # Hardcoded — do not use ${PORT}; Coolify shared PORT=3001 breaks the proxy
       PORT: "3000"
       HOSTNAME: "0.0.0.0"
-      # Internal Coolify service DNS — do not use the public site URL here
       BACKEND_URL: http://backend:3001
       NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:-https://thedinkhousepb.com}
       SITE_URL: ${SITE_URL:-https://thedinkhousepb.com}
