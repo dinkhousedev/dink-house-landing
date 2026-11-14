@@ -14,6 +14,8 @@ import { Skeleton } from "@heroui/skeleton";
 import { Chip } from "@heroui/chip";
 import { motion, AnimatePresence } from "framer-motion";
 
+import { logger } from "@/lib/logger";
+
 interface ContactFormModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -83,7 +85,7 @@ const ContactFormModal: React.FC<ContactFormModalProps> = ({
           setHasRestoredData(true);
         }
       } catch (error) {
-        console.error("Error loading saved form data:", error);
+        logger.error("Error loading saved form data:", error);
       } finally {
         setIsLoading(false);
       }
@@ -100,7 +102,7 @@ const ContactFormModal: React.FC<ContactFormModalProps> = ({
       delete dataToSave._honeypot; // Don't save honeypot
       localStorage.setItem(STORAGE_KEY, JSON.stringify(dataToSave));
     } catch (error) {
-      console.error("Error saving form data:", error);
+      logger.error("Error saving form data:", error);
     }
   }, [formData]);
 
@@ -192,37 +194,49 @@ const ContactFormModal: React.FC<ContactFormModalProps> = ({
     try {
       const response = await fetch("/api/contact-form", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          firstName: formData.firstName.trim(),
+          lastName: formData.lastName.trim(),
+          email: formData.email.trim().toLowerCase(),
+          phone: formData.phone?.trim() || undefined,
+          company: formData.company?.trim() || undefined,
+          subject: formData.subject?.trim() || "General Inquiry",
+          message: formData.message.trim(),
+          _honeypot: formData._honeypot,
+        }),
       });
 
-      const result = await response.json();
+      const result = (await response.json()) as {
+        success?: boolean;
+        message?: string;
+      };
 
-      if (response.ok && result.success) {
-        setSubmitStatus("success");
-        // Clear localStorage on successful submission
-        localStorage.removeItem(STORAGE_KEY);
-        // Clear form after successful submission
-        setTimeout(() => {
-          onClose();
-          setSubmitStatus("idle");
-          setFormData({
-            firstName: "",
-            lastName: "",
-            email: "",
-            message: "",
-            phone: "",
-            company: "",
-            subject: "",
-            _honeypot: "",
-          });
-        }, 3000);
-      } else {
+      if (!response.ok || !result.success) {
         setSubmitStatus("error");
-        setErrors({ submit: result.message || "Failed to send message" });
+        setErrors({
+          submit: result.message || "Failed to send message",
+        });
+
+        return;
       }
+
+      setSubmitStatus("success");
+      localStorage.removeItem(STORAGE_KEY);
+      setTimeout(() => {
+        onClose();
+        setSubmitStatus("idle");
+        setFormData({
+          firstName: "",
+          lastName: "",
+          email: "",
+          message: "",
+          phone: "",
+          company: "",
+          subject: "",
+          _honeypot: "",
+        });
+      }, 3000);
     } catch (error) {
       setSubmitStatus("error");
       setErrors({

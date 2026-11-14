@@ -12,9 +12,14 @@ import { Input } from "@heroui/input";
 interface WaitlistModalProps {
   isOpen: boolean;
   onClose: () => void;
+  source?: string;
 }
 
-const WaitlistModal: React.FC<WaitlistModalProps> = ({ isOpen, onClose }) => {
+const WaitlistModal: React.FC<WaitlistModalProps> = ({
+  isOpen,
+  onClose,
+  source = "website",
+}) => {
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -69,25 +74,39 @@ const WaitlistModal: React.FC<WaitlistModalProps> = ({ isOpen, onClose }) => {
     setSubmitStatus("idle");
 
     try {
-      const response = await fetch("/api/contact", {
+      const response = await fetch("/api/subscribers", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: formData.email.trim().toLowerCase(),
+          firstName: formData.firstName.trim(),
+          lastName: formData.lastName.trim(),
+          source,
+        }),
       });
 
-      const data = await response.json();
+      const result = (await response.json()) as {
+        success?: boolean;
+        duplicate?: boolean;
+        error?: string;
+      };
 
-      if (response.ok) {
-        // Check if this is a duplicate based on the message
-        if (data.message && data.message.includes("already on our waitlist")) {
-          setSubmitStatus("duplicate");
-        } else {
-          setSubmitStatus("success");
-          setFormData({ firstName: "", lastName: "", email: "" });
-          setAcceptNotifications(false);
-        }
+      if (!response.ok) {
+        setSubmitStatus("error");
+        setErrors({
+          submit: result.error || "Something went wrong. Please try again.",
+        });
+
+        return;
+      }
+
+      if (result.duplicate) {
+        setSubmitStatus("duplicate");
+      } else if (result.success) {
+        setSubmitStatus("success");
+        setFormData({ firstName: "", lastName: "", email: "" });
+        setAcceptNotifications(false);
+
         setTimeout(() => {
           onClose();
           setSubmitStatus("idle");
@@ -96,7 +115,7 @@ const WaitlistModal: React.FC<WaitlistModalProps> = ({ isOpen, onClose }) => {
         }, 3000);
       } else {
         setSubmitStatus("error");
-        setErrors({ submit: data.error || "Something went wrong" });
+        setErrors({ submit: result.error || "Something went wrong" });
       }
     } catch (error) {
       const message =
@@ -172,7 +191,9 @@ const WaitlistModal: React.FC<WaitlistModalProps> = ({ isOpen, onClose }) => {
 
                 {errors.submit && (
                   <div className="p-3 bg-red-100 text-red-700 rounded-lg">
-                    {errors.submit}
+                    {errors.submit === "fetch failed"
+                      ? "Service temporarily unavailable. Please try again in a moment."
+                      : errors.submit}
                   </div>
                 )}
 
@@ -181,6 +202,10 @@ const WaitlistModal: React.FC<WaitlistModalProps> = ({ isOpen, onClose }) => {
                     <Input
                       isRequired
                       autoComplete="given-name"
+                      classNames={{
+                        input: "text-foreground",
+                        inputWrapper: "bg-default-100 dark:bg-default-100",
+                      }}
                       errorMessage={errors.firstName}
                       isInvalid={!!errors.firstName}
                       label="First Name"
@@ -193,6 +218,10 @@ const WaitlistModal: React.FC<WaitlistModalProps> = ({ isOpen, onClose }) => {
                     <Input
                       isRequired
                       autoComplete="family-name"
+                      classNames={{
+                        input: "text-foreground",
+                        inputWrapper: "bg-default-100 dark:bg-default-100",
+                      }}
                       errorMessage={errors.lastName}
                       isInvalid={!!errors.lastName}
                       label="Last Name"
@@ -205,6 +234,10 @@ const WaitlistModal: React.FC<WaitlistModalProps> = ({ isOpen, onClose }) => {
                     <Input
                       isRequired
                       autoComplete="email"
+                      classNames={{
+                        input: "text-foreground",
+                        inputWrapper: "bg-default-100 dark:bg-default-100",
+                      }}
                       errorMessage={errors.email}
                       isInvalid={!!errors.email}
                       label="Email"

@@ -5,7 +5,9 @@
  * Get the CloudFront base URL from environment variables
  * Falls back to a placeholder for development
  */
-export const CLOUDFRONT_URL = process.env.NEXT_PUBLIC_CLOUDFRONT_URL || "https://dznfm70a0fusp.cloudfront.net";
+export const CLOUDFRONT_URL =
+  process.env.NEXT_PUBLIC_CLOUDFRONT_URL ||
+  "https://dpu7e3z5fb56y.cloudfront.net";
 
 /**
  * Base paths for different media types
@@ -28,6 +30,7 @@ export const MEDIA_PATHS = {
 export function getMediaUrl(path: string): string {
   // Remove leading slash if present
   const cleanPath = path.startsWith("/") ? path.slice(1) : path;
+
   return `${CLOUDFRONT_URL}/${cleanPath}`;
 }
 

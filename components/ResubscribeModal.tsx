@@ -88,7 +88,7 @@ const ResubscribeModal: React.FC<ResubscribeModalProps> = ({
         setSubmitStatus("error");
         setMessage(data.error || "Something went wrong");
       }
-    } catch (error) {
+    } catch {
       setSubmitStatus("error");
       setMessage("Network error. Please try again.");
     } finally {

@@ -34,11 +34,11 @@ export const SimpleImageCarousel = ({
 
   return (
     <ImageCarousel
-      images={images}
       autoplayInterval={autoplayInterval}
+      className={className}
+      images={images}
       showControls={showControls}
       showIndicators={showIndicators}
-      className={className}
     />
   );
 };

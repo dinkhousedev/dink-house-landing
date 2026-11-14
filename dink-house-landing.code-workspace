@@ -4,10 +4,10 @@
 			"path": "."
 		},
 		{
-			"path": "../dink-house-admin"
+			"path": "../Dink-House-mobile"
 		},
 		{
-			"path": "../dink-house-db"
+			"path": "../the-dink-house"
 		}
 	],
 	"settings": {

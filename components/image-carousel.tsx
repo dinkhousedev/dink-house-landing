@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { LazyMotion, domAnimation, m, AnimatePresence } from "framer-motion";
-import { Image } from "@heroui/react";
-import { Button } from "@heroui/react";
+import Image from "next/image";
+import { Button } from "@heroui/button";
 
 interface ImageCarouselProps {
   images: Array<{ src: string; srcSet?: string; alt: string }>;
@@ -51,13 +51,24 @@ export const ImageCarousel = ({
     (newDirection: number) => {
       setPage([page + newDirection, newDirection]);
     },
-    [page]
+    [page],
   );
 
   const goToSlide = (index: number) => {
     const newDirection = index > imageIndex ? 1 : -1;
+
     setPage([index, newDirection]);
   };
+
+  // Warm the browser cache so slide changes don't wait on a network fetch.
+  useEffect(() => {
+    images.forEach(({ src }) => {
+      const img = new window.Image();
+
+      img.decoding = "async";
+      img.src = src;
+    });
+  }, [images]);
 
   // Auto-advance slides
   useEffect(() => {
@@ -74,29 +85,39 @@ export const ImageCarousel = ({
     return null;
   }
 
+  const currentImage = images[imageIndex];
+
   return (
     <div
-      className={`relative w-full overflow-hidden ${className}`}
+      className={`relative w-full overflow-hidden bg-neutral-900 ${className}`}
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
     >
+      {/* Keep every slide in the document so the browser can fetch them up front. */}
+      <div className="sr-only" aria-hidden="true">
+        {images.map((image) => (
+          <img key={image.src} alt="" src={image.src} />
+        ))}
+      </div>
+
       <LazyMotion features={domAnimation}>
         <div className="relative w-full h-full">
-          <AnimatePresence initial={false} custom={direction}>
+          <AnimatePresence custom={direction} initial={false}>
             <m.div
               key={page}
-              custom={direction}
-              variants={slideVariants}
-              initial="enter"
               animate="center"
+              className="absolute inset-0"
+              custom={direction}
+              drag="x"
+              dragConstraints={{ left: 0, right: 0 }}
+              dragElastic={1}
               exit="exit"
+              initial="enter"
               transition={{
                 x: { type: "spring", stiffness: 300, damping: 30 },
                 opacity: { duration: 0.2 },
               }}
-              drag="x"
-              dragConstraints={{ left: 0, right: 0 }}
-              dragElastic={1}
+              variants={slideVariants}
               onDragEnd={(_, { offset, velocity }) => {
                 const swipe = swipePower(offset.x, velocity.x);
 
@@ -106,15 +127,16 @@ export const ImageCarousel = ({
                   paginate(-1);
                 }
               }}
-              className="absolute inset-0 flex items-center justify-center"
             >
               <Image
-                src={images[imageIndex].src}
-                srcSet={images[imageIndex].srcSet}
-                sizes="(max-width: 640px) 640px, (max-width: 1024px) 800px, 1200px"
-                alt={images[imageIndex].alt}
-                className="h-full w-full object-cover object-center"
-                loading="lazy"
+                fill
+                unoptimized
+                alt={currentImage.alt}
+                className="object-cover object-center"
+                decoding="async"
+                loading="eager"
+                sizes="(max-width: 640px) 100vw, (max-width: 1280px) 100vw, 1280px"
+                src={currentImage.src}
               />
             </m.div>
           </AnimatePresence>
@@ -125,43 +147,43 @@ export const ImageCarousel = ({
           <>
             <Button
               isIconOnly
+              aria-label="Previous image"
               className="absolute left-4 top-1/2 z-10 -translate-y-1/2 bg-black/50 text-white hover:bg-black/70"
               onPress={() => paginate(-1)}
-              aria-label="Previous image"
             >
               <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={2}
-                stroke="currentColor"
                 className="h-6 w-6"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
               >
                 <path
+                  d="M15.75 19.5L8.25 12l7.5-7.5"
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  d="M15.75 19.5L8.25 12l7.5-7.5"
                 />
               </svg>
             </Button>
             <Button
               isIconOnly
+              aria-label="Next image"
               className="absolute right-4 top-1/2 z-10 -translate-y-1/2 bg-black/50 text-white hover:bg-black/70"
               onPress={() => paginate(1)}
-              aria-label="Next image"
             >
               <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={2}
-                stroke="currentColor"
                 className="h-6 w-6"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
               >
                 <path
+                  d="M8.25 4.5l7.5 7.5-7.5 7.5"
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  d="M8.25 4.5l7.5 7.5-7.5 7.5"
                 />
               </svg>
             </Button>
@@ -174,13 +196,13 @@ export const ImageCarousel = ({
             {images.map((_, index) => (
               <button
                 key={index}
-                onClick={() => goToSlide(index)}
+                aria-label={`Go to slide ${index + 1}`}
                 className={`h-2 w-2 rounded-full transition-all ${
                   index === imageIndex
                     ? "w-6 bg-white"
                     : "bg-white/50 hover:bg-white/75"
                 }`}
-                aria-label={`Go to slide ${index + 1}`}
+                onClick={() => goToSlide(index)}
               />
             ))}
           </div>

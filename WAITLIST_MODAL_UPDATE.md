@@ -11,12 +11,15 @@ Updated the WaitlistModal component to include a required consent checkbox, matc
 ## Changes Made
 
 ### ✅ Added Checkbox State
+
 ```typescript
 const [acceptNotifications, setAcceptNotifications] = useState(false);
 ```
 
 ### ✅ Enhanced Form Validation
+
 Added consent validation to the `validateForm()` function:
+
 ```typescript
 if (!acceptNotifications) {
   newErrors.consent = "Please confirm that you want to receive notifications";
@@ -24,6 +27,7 @@ if (!acceptNotifications) {
 ```
 
 ### ✅ Submit Button Disabled Until Checked
+
 ```typescript
 isDisabled={
   submitStatus === "success" ||
@@ -33,7 +37,9 @@ isDisabled={
 ```
 
 ### ✅ Checkbox UI Component
+
 Added between email input and modal footer:
+
 ```tsx
 <div className="flex items-start gap-3 pt-2">
   <input
@@ -49,21 +55,23 @@ Added between email input and modal footer:
     className="text-sm text-gray-700 cursor-pointer select-none"
     htmlFor="accept-notifications-modal"
   >
-    I agree to receive email notifications about court bookings,
-    events, tips, and special offers from The Dink House.{" "}
+    I agree to receive email notifications about court bookings, events, tips,
+    and special offers from The Dink House.{" "}
     <span className="text-red-500">*</span>
   </label>
-</div>
+</div>;
 
-{errors.consent && (
-  <div className="text-sm text-red-600 mt-1">
-    {errors.consent}
-  </div>
-)}
+{
+  errors.consent && (
+    <div className="text-sm text-red-600 mt-1">{errors.consent}</div>
+  );
+}
 ```
 
 ### ✅ Form Reset on Success
+
 Checkbox state resets after successful submission:
+
 ```typescript
 setAcceptNotifications(false);
 ```
@@ -71,6 +79,7 @@ setAcceptNotifications(false);
 ## Features
 
 ### User Experience
+
 - **Unchecked by default** - Requires explicit opt-in
 - **Submit button disabled** until checkbox is checked
 - **Inline error message** if user tries to submit without checking
@@ -78,12 +87,14 @@ setAcceptNotifications(false);
 - **Same styling** as newsletter form checkbox (#B3FF00 accent)
 
 ### Validation
+
 - **Client-side validation** before API call
 - **Clear error message** displayed under checkbox
 - **Required field** with red asterisk indicator
 - **Error cleared** when checkbox is checked
 
 ### GDPR Compliance
+
 - ✅ Explicit consent language
 - ✅ Unchecked by default (no pre-ticked boxes)
 - ✅ Describes what notifications include
@@ -93,6 +104,7 @@ setAcceptNotifications(false);
 ## Modal Flow
 
 ### Before Update
+
 ```
 [First Name]
 [Last Name]
@@ -101,6 +113,7 @@ setAcceptNotifications(false);
 ```
 
 ### After Update
+
 ```
 [First Name]
 [Last Name]
@@ -112,22 +125,27 @@ setAcceptNotifications(false);
 ## Behavior
 
 1. **Modal opens:**
+
    - All fields empty
    - Checkbox unchecked
    - Submit button disabled
 
 2. **User fills form:**
+
    - Fields have validation
    - Submit button stays disabled until checkbox is checked
 
 3. **User checks checkbox:**
+
    - Submit button becomes enabled
    - "Join Waitlist" text shown
 
 4. **User unchecks checkbox:**
+
    - Submit button disabled again
 
 5. **User tries to submit without checking:**
+
    - Validation error: "Please confirm that you want to receive notifications"
    - Red error text appears below checkbox
    - Form does not submit
@@ -158,12 +176,14 @@ setAcceptNotifications(false);
 Both forms now have identical checkbox implementation:
 
 **Newsletter Form (`newsletter-form.tsx`):**
+
 - ✅ Checkbox required
 - ✅ Submit disabled until checked
 - ✅ Same consent language
 - ✅ Same styling
 
 **Waitlist Modal (`WaitlistModal.tsx`):**
+
 - ✅ Checkbox required
 - ✅ Submit disabled until checked
 - ✅ Same consent language

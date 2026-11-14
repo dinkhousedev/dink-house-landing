@@ -221,6 +221,7 @@ AND routine_name LIKE '%contribution%';
 ```
 
 You should see:
+
 - `complete_contribution`
 - `create_checkout_contribution`
 - `update_contribution_session`
@@ -232,11 +233,13 @@ You should see:
 ### Daily Workflow
 
 1. **Terminal 1:** Start Next.js dev server
+
    ```bash
    npm run dev
    ```
 
 2. **Terminal 2:** Start Stripe webhook forwarding
+
    ```bash
    stripe listen --forward-to localhost:3000/api/stripe/webhook
    ```
@@ -260,14 +263,15 @@ You should see:
 
 ## Stripe Test Cards
 
-| Card Number | Description |
-|-------------|-------------|
-| `4242 4242 4242 4242` | Successful payment |
-| `4000 0025 0000 3155` | Requires authentication (3D Secure) |
+| Card Number           | Description                           |
+| --------------------- | ------------------------------------- |
+| `4242 4242 4242 4242` | Successful payment                    |
+| `4000 0025 0000 3155` | Requires authentication (3D Secure)   |
 | `4000 0000 0000 9995` | Payment declined (insufficient funds) |
-| `4000 0000 0000 0002` | Payment declined (card declined) |
+| `4000 0000 0000 0002` | Payment declined (card declined)      |
 
 All test cards:
+
 - Use any future expiration date (e.g., `12/34`)
 - Use any 3-digit CVC (e.g., `123`)
 - Use any ZIP code (e.g., `12345`)
@@ -306,24 +310,26 @@ stripe listen --print-json
 
 ## Port Reference
 
-| Service | Port | URL |
-|---------|------|-----|
-| Next.js Dev Server | 3000 | http://localhost:3000 |
-| Mailpit (Email Testing) | 1025 (SMTP) | http://localhost:8025 (Web UI) |
-| Supabase (Cloud) | N/A | https://wchxzbuuwssrnaxshseu.supabase.co |
+| Service                 | Port        | URL                                      |
+| ----------------------- | ----------- | ---------------------------------------- |
+| Next.js Dev Server      | 3000        | http://localhost:3000                    |
+| Mailpit (Email Testing) | 1025 (SMTP) | http://localhost:8025 (Web UI)           |
+| Supabase (Cloud)        | N/A         | https://wchxzbuuwssrnaxshseu.supabase.co |
 
 ---
 
 ## Production vs Development
 
 ### Development (localhost)
-- Uses Stripe **Test mode** keys (sk_test_...)
+
+- Uses Stripe **Test mode** keys (sk*test*...)
 - Webhook forwarded via Stripe CLI
 - Points to cloud Supabase (wchxzbuuwssrnaxshseu.supabase.co)
 - Site URL: http://localhost:3000
 
 ### Production (dinkhousepb.com)
-- Uses Stripe **Live mode** keys (sk_live_...)
+
+- Uses Stripe **Live mode** keys (sk*live*...)
 - Webhook configured in Stripe Dashboard
 - Points to cloud Supabase (same instance or different)
 - Site URL: https://dinkhousepb.com

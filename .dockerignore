@@ -1,0 +1,14 @@
+node_modules
+backend
+.next
+.git
+.gitignore
+*.md
+.env
+.env.*
+!.env.example
+data-export
+dink-house-db-export.zip
+cloudflared.deb
+website_media
+lib/generated

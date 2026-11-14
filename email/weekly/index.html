@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Weekly Emails — Preview</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body { margin: 0; display: flex; height: 100vh; background: #000; color: #fff;
+         font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+  aside { width: 340px; min-width: 340px; overflow-y: auto; background: #111; border-right: 2px solid #B3FF00; }
+  aside h1 { font-size: 15px; letter-spacing: 3px; text-transform: uppercase; color: #B3FF00;
+             padding: 18px 16px 4px; margin: 0; }
+  aside p.sub { margin: 0 0 10px; padding: 0 16px; font-size: 12px; color: #A3A3A3; }
+  nav a { display: block; padding: 10px 16px; text-decoration: none; color: #fff;
+          border-bottom: 1px solid #1F1F1F; font-size: 13px; line-height: 1.4; }
+  nav a:hover { background: #1A1A1A; }
+  nav a.active { background: #B3FF00; color: #000; }
+  nav a.active .theme { color: #000; }
+  .theme { display: block; font-size: 10px; font-weight: 700; letter-spacing: 1.5px;
+           text-transform: uppercase; color: #B3FF00; margin-bottom: 2px; }
+  main { flex: 1; display: flex; flex-direction: column; }
+  iframe { flex: 1; border: 0; width: 100%; background: #000; }
+</style>
+</head>
+<body>
+<aside>
+  <h1>The Dink House</h1>
+  <p class="sub">26-week engagement series — click a week</p>
+  <nav id="nav"></nav>
+</aside>
+<main>
+  <iframe id="frame" src="week-01.html" title="Email preview"></iframe>
+</main>
+<script>
+const weeks = [
+  [1,  "Tips",    "Own the kitchen"],
+  [2,  "Health",  "Warm up like it matters"],
+  [3,  "Culture", "The fastest-growing sport in America"],
+  [4,  "Tips",    "Master the third-shot drop"],
+  [5,  "Health",  "Shoulder care for paddle players"],
+  [6,  "Culture", "Court etiquette 101"],
+  [7,  "Tips",    "The art of the dink"],
+  [8,  "Health",  "Hydrate like a Texan"],
+  [9,  "Culture", "Ratings, explained (DUPR)"],
+  [10, "Tips",    "Serve deep, serve smart"],
+  [11, "Health",  "Knee-proof your game"],
+  [12, "Culture", "In defense of the dink"],
+  [13, "Tips",    "Stacking made simple"],
+  [14, "Health",  "Recover like you mean it"],
+  [15, "Culture", "Indoor vs. outdoor pickleball"],
+  [16, "Tips",    "Learn the reset"],
+  [17, "Health",  "Back-friendly pickleball"],
+  [18, "Culture", "The Central Texas scene"],
+  [19, "Tips",    "Doubles is a conversation"],
+  [20, "Health",  "Protect your eyes"],
+  [21, "Culture", "How to watch pro pickleball"],
+  [22, "Tips",    "Move like a player"],
+  [23, "Health",  "Strong after 40"],
+  [24, "Culture", "A quick tour of paddle tech"],
+  [25, "Tips",    "Grip: pressure and position"],
+  [26, "Health",  "Sleep: the free upgrade"],
+];
+const nav = document.getElementById("nav");
+const frame = document.getElementById("frame");
+const bust = Date.now();
+function weekFile(n) {
+  return "week-" + String(n).padStart(2, "0") + ".html?v=" + bust;
+}
+for (const [n, theme, heading] of weeks) {
+  const a = document.createElement("a");
+  a.href = "#" + n;
+  a.innerHTML = '<span class="theme">Week ' + n + " · " + theme + "</span>" + heading;
+  a.onclick = (e) => {
+    e.preventDefault();
+    frame.src = weekFile(n);
+    document.querySelectorAll("nav a").forEach((el) => el.classList.remove("active"));
+    a.classList.add("active");
+    location.hash = n;
+  };
+  nav.appendChild(a);
+}
+const start = parseInt(location.hash.slice(1), 10);
+const links = nav.querySelectorAll("a");
+const initial = start >= 1 && start <= 26 ? start : 1;
+links[initial - 1].classList.add("active");
+frame.src = weekFile(initial);
+</script>
+</body>
+</html>
