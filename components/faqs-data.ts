@@ -7,7 +7,7 @@ const faqs = [
   {
     title: "What makes The Dink House special?",
     content:
-      "The Dink House is Bell County's first indoor pickleball facility, featuring 10 championship-quality courts with 5 climate-controlled indoor courts and 5 outdoor courts. Our indoor courts allow for year-round play regardless of weather conditions, making us unique in the Central Texas area.",
+      "The Dink House is Bell County's first indoor pickleball facility, with 11 planned championship-quality courts: 6 climate-controlled indoor courts and 5 outdoor courts. Our indoor courts allow for year-round play regardless of weather conditions, making us unique in the Central Texas area.",
   },
   {
     title: "Where are you located?",
@@ -32,7 +32,7 @@ const faqs = [
   {
     title: "What are your court specifications?",
     content:
-      "All 10 of our courts are built to USA Pickleball Association (USAPA) tournament standards. Our 5 indoor courts feature climate control for comfortable play year-round, while our 5 outdoor courts offer the traditional outdoor pickleball experience with high-quality surfaces and proper lighting.",
+      "All 11 of our planned courts are built to USA Pickleball Association (USAPA) tournament standards. Our 6 indoor courts feature climate control for comfortable play year-round, while our 5 outdoor courts offer the traditional outdoor pickleball experience with high-quality surfaces and proper lighting.",
   },
   {
     title: "Will you offer lessons or coaching?",
@@ -57,7 +57,7 @@ const faqs = [
   {
     title: "Will you host tournaments and events?",
     content:
-      "Absolutely! With 10 championship-quality courts, The Dink House will be perfectly equipped to host tournaments, leagues, corporate events, and social gatherings. We're excited to become a hub for the pickleball community in Central Texas.",
+      "Absolutely! With 11 planned championship-quality courts, The Dink House will be perfectly equipped to host tournaments, leagues, corporate events, and social gatherings. We're excited to become a hub for the pickleball community in Central Texas.",
   },
   {
     title: "Do you offer equipment rental?",

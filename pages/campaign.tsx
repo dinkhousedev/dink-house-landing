@@ -563,7 +563,7 @@ export default function CampaignPage() {
                   <span className="text-dink-lime">Main</span> Campaign
                 </h2>
                 <p className="text-gray-400 max-w-2xl mx-auto">
-                  The foundation of our community — 10 championship courts in
+                  The foundation of our community — 11 planned championship courts in
                   Bell County
                 </p>
               </div>

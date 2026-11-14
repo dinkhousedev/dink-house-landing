@@ -11,7 +11,9 @@ import {
 } from "../lib/email-templates.js";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
-  apiVersion: "2025-10-29.clover",
+  // Kept on this API version through SDK upgrades; the SDK's types only name
+  // its own latest version. Moving the version is a separate, deliberate change.
+  apiVersion: "2025-10-29.clover" as Stripe.LatestApiVersion,
 });
 
 const siteUrl = () =>
