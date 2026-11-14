@@ -53,6 +53,20 @@ const nextConfig = {
   },
   // swcMinify is now enabled by default in Next.js 13+, no need to specify
   poweredByHeader: false,
+  async redirects() {
+    return [
+      {
+        source: "/moneyball",
+        destination: "/#programs",
+        permanent: false,
+      },
+      {
+        source: "/moneyball/:id",
+        destination: "/#programs",
+        permanent: false,
+      },
+    ];
+  },
   // Disable source maps in production for security and performance
   productionBrowserSourceMaps: false,
   // Disable x-powered-by header

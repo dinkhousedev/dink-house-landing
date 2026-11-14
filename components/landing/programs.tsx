@@ -1,13 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 
-import NextLink from "next/link";
-import {
-  ArrowUpRight,
-  GraduationCap,
-  PartyPopper,
-  Trophy,
-  Users,
-} from "lucide-react";
+import { GraduationCap, PartyPopper, Trophy, Users } from "lucide-react";
 
 import { Reveal, SectionHeading } from "./shared";
 
@@ -15,8 +8,6 @@ type Program = {
   Icon: LucideIcon;
   title: string;
   text: string;
-  href?: string;
-  cta?: string;
   tag?: string;
 };
 
@@ -35,9 +26,7 @@ const PROGRAMS: Program[] = [
     Icon: Trophy,
     title: "Moneyball",
     text: "Our doubles team tournament. Grab a partner and play for a purse that grows with every team that enters.",
-    href: "/moneyball",
-    cta: "Sign up now",
-    tag: "Live now",
+    tag: "At the facility",
   },
   {
     Icon: PartyPopper,
@@ -48,7 +37,10 @@ const PROGRAMS: Program[] = [
 
 export default function Programs() {
   return (
-    <section className="relative overflow-hidden border-y border-white/10 bg-dink-gray/40">
+    <section
+      className="relative overflow-hidden border-y border-white/10 bg-dink-gray/40"
+      id="programs"
+    >
       <div
         aria-hidden
         className="court-pattern absolute inset-0 opacity-40 [mask-image:radial-gradient(ellipse_at_center,black,transparent_75%)]"
@@ -87,33 +79,13 @@ export default function Programs() {
                 <p className="mt-2 flex-1 text-sm leading-6 text-default-500">
                   {program.text}
                 </p>
-                {program.cta && (
-                  <span className="mt-6 inline-flex items-center gap-1 text-sm font-bold uppercase tracking-wider text-dink-lime">
-                    {program.cta}
-                    <ArrowUpRight
-                      className="transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
-                      size={16}
-                    />
-                  </span>
-                )}
               </>
             );
-            const cardClass =
-              "group flex h-full flex-col rounded-3xl border bg-black/60 p-6 backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-dink-lime/60 hover:shadow-[0_20px_60px_-20px_rgba(179,255,0,0.35)]";
 
             return (
               <Reveal key={program.title} className="h-full" delay={i * 0.08}>
-                <div className="h-full">
-                  {program.href ? (
-                    <NextLink
-                      className={`${cardClass} border-dink-lime/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-dink-lime`}
-                      href={program.href}
-                    >
-                      {body}
-                    </NextLink>
-                  ) : (
-                    <div className={`${cardClass} border-white/10`}>{body}</div>
-                  )}
+                <div className="group flex h-full flex-col rounded-3xl border border-white/10 bg-black/60 p-6 backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-dink-lime/60 hover:shadow-[0_20px_60px_-20px_rgba(179,255,0,0.35)]">
+                  {body}
                 </div>
               </Reveal>
             );
