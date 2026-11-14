@@ -57,3 +57,6 @@ data-export/
 dink-house-db-export.zip
 backend/qa.txt
 public/ads/open-play/open-play.mp4
+
+# Prisma 7 generated client (npm postinstall runs prisma generate)
+lib/generated/

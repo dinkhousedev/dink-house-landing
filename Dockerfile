@@ -1,4 +1,4 @@
-FROM node:20-alpine AS base
+FROM node:22-alpine AS base
 # Retry apk — Coolify builders sometimes hit transient Alpine CDN/DNS errors
 RUN set -eux; \
   for i in 1 2 3 4 5 6 7 8 9 10; do \
@@ -10,10 +10,10 @@ RUN set -eux; \
 
 FROM base AS deps
 WORKDIR /app
-COPY package.json package-lock.json* ./
+COPY package.json package-lock.json* prisma.config.ts ./
 COPY prisma ./prisma
+# postinstall runs `prisma generate` into lib/generated/prisma
 RUN npm ci
-RUN npx prisma generate
 
 FROM base AS builder
 WORKDIR /app
@@ -40,9 +40,8 @@ RUN addgroup --system --gid 1001 nodejs \
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-# Prisma engines for Alpine
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@prisma/client ./node_modules/@prisma/client
+# Prisma 7 has no native engine: the generated client and the pg adapter are
+# bundled into .next/standalone by Next's file tracing.
 
 USER nextjs
 EXPOSE 3000
